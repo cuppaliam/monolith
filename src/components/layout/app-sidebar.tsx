@@ -6,7 +6,6 @@ import {
   Sidebar,
   SidebarHeader,
   SidebarContent,
-  SidebarFooter,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
@@ -21,7 +20,6 @@ import {
   BarChart3,
   Settings,
 } from 'lucide-react';
-import UserNav from './user-nav';
 import Logo from './logo';
 
 const navItems = [
@@ -65,20 +63,6 @@ export default function AppSidebar() {
           ))}
         </SidebarMenu>
       </SidebarContent>
-      <SidebarFooter>
-        <div className="flex items-center gap-2">
-          <UserNav />
-          <div className="grow truncate text-sm">
-            <p className="font-semibold">Workspace</p>
-            <p className="text-xs text-muted-foreground">Admin User</p>
-          </div>
-          <Button asChild variant="ghost" size="icon" tooltip="Settings">
-            <Link href="/settings">
-              <Settings />
-            </Link>
-          </Button>
-        </div>
-      </SidebarFooter>
     </Sidebar>
   );
 }
