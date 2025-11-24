@@ -164,7 +164,7 @@ export default function TimerComponent() {
         <span className="text-muted-foreground">Working on</span>
         <Select onValueChange={setSelectedProject} disabled={isRunning}>
           <SelectTrigger className="w-auto h-12 text-base border-none focus:ring-0 bg-transparent shadow-none">
-            <SelectValue placeholder="a project..." />
+            <SelectValue placeholder="project" />
           </SelectTrigger>
           <SelectContent>
             {projects.map((project) => (
