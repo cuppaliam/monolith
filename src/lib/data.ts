@@ -1,4 +1,4 @@
-import type { Project, Task, TimeEntry, Habit, HabitLog } from './types';
+import type { Project, Task, TimeEntry, Habit, HabitLog, Column } from './types';
 import { subDays, formatISO, startOfWeek, addDays, format } from 'date-fns';
 
 export const projects: Project[] = [
@@ -6,6 +6,13 @@ export const projects: Project[] = [
   { id: 'proj-2', name: 'Client Website', color: 'hsl(var(--chart-2))' },
   { id: 'proj-3', name: 'Internal Tools', color: 'hsl(var(--chart-3))' },
   { id: 'proj-4', name: 'Marketing Campaign', color: 'hsl(var(--chart-4))' },
+];
+
+export const columns: Column[] = [
+    { id: 'backlog', title: 'Backlog' },
+    { id: 'todo', title: 'To Do' },
+    { id: 'inprogress', title: 'In Progress' },
+    { id: 'done', title: 'Done' },
 ];
 
 export const tasks: Task[] = [

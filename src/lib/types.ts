@@ -8,10 +8,17 @@ export type TaskStatus = 'todo' | 'inprogress' | 'done' | 'backlog';
 
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 
-export type Task = {
-  id: string;
+export type Id = string | number;
+
+export type Column = {
+  id: Id;
   title: string;
-  status: TaskStatus;
+};
+
+export type Task = {
+  id: Id;
+  status: Id;
+  title: string;
   priority: TaskPriority;
   dueDate: string;
   projectId: string;

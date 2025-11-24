@@ -1,30 +1,154 @@
-import { tasks } from '@/lib/data';
-import type { Task, TaskStatus } from '@/lib/types';
-import KanbanColumn from './kanban-column';
+'use client';
 
-const columns: { id: TaskStatus; title: string }[] = [
-  { id: 'backlog', title: 'Backlog' },
-  { id: 'todo', title: 'To Do' },
-  { id: 'inprogress', title: 'In Progress' },
-  { id: 'done', title: 'Done' },
-];
+import { useState, useMemo } from 'react';
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverEvent,
+  DragOverlay,
+  DragStartEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import { SortableContext, arrayMove } from '@dnd-kit/sortable';
+import { createPortal } from 'react-dom';
+
+import { tasks as initialTasks, columns as initialColumns, projects } from '@/lib/data';
+import type { Column, Task, Project } from '@/lib/types';
+
+import KanbanColumn from './kanban-column';
+import TaskCard from './task-card';
 
 export default function KanbanBoard() {
-  const tasksByColumn = columns.reduce((acc, column) => {
-    acc[column.id] = tasks.filter((task) => task.status === column.id);
-    return acc;
-  }, {} as Record<TaskStatus, Task[]>);
+  const [columns, setColumns] = useState<Column[]>(initialColumns);
+  const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
+
+  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+
+  const [activeColumn, setActiveColumn] = useState<Column | null>(null);
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
+  
+  const getProject = (projectId: string): Project | undefined => projects.find(p => p.id === projectId);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 10,
+      },
+    })
+  );
+
+  function onDragStart(event: DragStartEvent) {
+    if (event.active.data.current?.type === 'Column') {
+      setActiveColumn(event.active.data.current.column);
+      return;
+    }
+
+    if (event.active.data.current?.type === 'Task') {
+      setActiveTask(event.active.data.current.task);
+      return;
+    }
+  }
+
+  function onDragEnd(event: DragEndEvent) {
+    setActiveColumn(null);
+    setActiveTask(null);
+
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeId = active.id;
+    const overId = over.id;
+
+    if (activeId === overId) return;
+
+    const isActiveAColumn = active.data.current?.type === 'Column';
+    if (!isActiveAColumn) return;
+
+    setColumns((columns) => {
+      const activeColumnIndex = columns.findIndex((col) => col.id === activeId);
+      const overColumnIndex = columns.findIndex((col) => col.id === overId);
+      return arrayMove(columns, activeColumnIndex, overColumnIndex);
+    });
+  }
+
+  function onDragOver(event: DragOverEvent) {
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeId = active.id;
+    const overId = over.id;
+
+    if (activeId === overId) return;
+
+    const isActiveATask = active.data.current?.type === 'Task';
+    const isOverATask = over.data.current?.type === 'Task';
+
+    if (!isActiveATask) return;
+
+    // Im dropping a Task over another Task
+    if (isActiveATask && isOverATask) {
+      setTasks((tasks) => {
+        const activeIndex = tasks.findIndex((t) => t.id === activeId);
+        const overIndex = tasks.findIndex((t) => t.id === overId);
+
+        if (tasks[activeIndex].status != tasks[overIndex].status) {
+          tasks[activeIndex].status = tasks[overIndex].status;
+          return arrayMove(tasks, activeIndex, overIndex - 1);
+        }
+
+        return arrayMove(tasks, activeIndex, overIndex);
+      });
+    }
+
+    const isOverAColumn = over.data.current?.type === 'Column';
+
+    // Im dropping a Task over a column
+    if (isActiveATask && isOverAColumn) {
+      setTasks((tasks) => {
+        const activeIndex = tasks.findIndex((t) => t.id === activeId);
+        tasks[activeIndex].status = overId as any;
+        return arrayMove(tasks, activeIndex, activeIndex);
+      });
+    }
+  }
 
   return (
     <div className="flex gap-6 overflow-x-auto pb-4 -mx-8 px-8">
-      {columns.map((column) => (
-        <KanbanColumn
-          key={column.id}
-          status={column.id}
-          title={column.title}
-          tasks={tasksByColumn[column.id]}
-        />
-      ))}
+      <DndContext
+        sensors={sensors}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        onDragOver={onDragOver}
+      >
+        <SortableContext items={columnsId}>
+          {columns.map((col) => (
+            <KanbanColumn
+              key={col.id}
+              column={col}
+              tasks={tasks.filter((task) => task.status === col.id)}
+            />
+          ))}
+        </SortableContext>
+
+        {createPortal(
+          <DragOverlay>
+            {activeColumn && (
+              <KanbanColumn
+                column={activeColumn}
+                tasks={tasks.filter(
+                  (task) => task.status === activeColumn.id
+                )}
+              />
+            )}
+            {activeTask && (
+              <TaskCard task={activeTask} project={getProject(activeTask.projectId)} />
+            )}
+          </DragOverlay>,
+          document.body
+        )}
+      </DndContext>
     </div>
   );
 }
