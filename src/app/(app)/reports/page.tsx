@@ -1,6 +1,9 @@
+
 import TimePerProjectChart from "@/components/reports/time-per-project-chart";
 import HabitCompletionChart from "@/components/reports/habit-completion-chart";
+import TimeLogTable from "@/components/time-tracking/time-log-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { timeEntries } from "@/lib/data";
 
 export default function ReportsPage() {
   return (
@@ -32,6 +35,10 @@ export default function ReportsPage() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      <div>
+        <TimeLogTable entries={timeEntries} />
       </div>
     </div>
   );
