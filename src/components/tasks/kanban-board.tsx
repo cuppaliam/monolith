@@ -124,17 +124,17 @@ export default function KanbanBoard() {
   }
 
   return (
-    <div className="flex gap-4 items-start overflow-x-auto pb-4 -mx-8 px-8">
+    <div className="flex gap-2 items-start overflow-x-auto pb-4 -mx-8 px-8">
       <DndContext
         sensors={sensors}
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
         onDragOver={onDragOver}
       >
-        <div className="flex gap-4">
+        <div className="flex gap-2">
           <SortableContext items={columnsId}>
             {columns.map((col, index) => (
-              <div key={col.id} className="flex gap-4 items-start">
+              <div key={col.id} className="flex gap-2 items-start">
                 <KanbanColumn
                   column={col}
                   tasks={tasks.filter((task) => task.status === col.id)}
@@ -142,10 +142,10 @@ export default function KanbanBoard() {
                 />
                 <Button
                   variant="ghost"
-                  className="h-full px-2 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-opacity opacity-20 hover:opacity-100"
+                  className="h-full px-1 text-muted-foreground hover:text-primary transition-opacity opacity-20 hover:opacity-100"
                   onClick={() => createNewColumn(index + 1)}
                 >
-                  <Plus size={20} />
+                  <Plus size={16} />
                 </Button>
               </div>
             ))}
