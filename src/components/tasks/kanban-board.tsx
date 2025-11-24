@@ -11,11 +11,17 @@ import {
   useSensors,
 } from '@dnd-kit/core';
 import { SortableContext, arrayMove } from '@dnd-kit/sortable';
+import { Plus } from 'lucide-react';
 
-import { tasks as initialTasks, columns as initialColumns, projects } from '@/lib/data';
-import type { Column, Task, Project } from '@/lib/types';
+import { tasks as initialTasks, columns as initialColumns } from '@/lib/data';
+import type { Column, Task } from '@/lib/types';
 
 import KanbanColumn from './kanban-column';
+import { Button } from '../ui/button';
+
+function generateId() {
+  return Math.floor(Math.random() * 10001);
+}
 
 export default function KanbanBoard() {
   const [columns, setColumns] = useState<Column[]>(initialColumns);
@@ -30,6 +36,24 @@ export default function KanbanBoard() {
       },
     })
   );
+
+  function createNewColumn(atIndex: number) {
+    const newColumn: Column = {
+      id: `col-${generateId()}`,
+      title: `New Section`,
+    };
+    const newColumns = [...columns];
+    newColumns.splice(atIndex, 0, newColumn);
+    setColumns(newColumns);
+  }
+
+  function updateColumn(id: string, title: string) {
+    const newColumns = columns.map((col) => {
+      if (col.id !== id) return col;
+      return { ...col, title };
+    });
+    setColumns(newColumns);
+  }
 
   function onDragStart(event: DragStartEvent) {
     // Handling of active elements is not needed without DragOverlay
@@ -99,24 +123,34 @@ export default function KanbanBoard() {
     }
   }
 
-
   return (
-    <div className="flex gap-6 overflow-x-auto pb-4 -mx-8 px-8">
+    <div className="flex gap-4 items-start overflow-x-auto pb-4 -mx-8 px-8">
       <DndContext
         sensors={sensors}
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
         onDragOver={onDragOver}
       >
-        <SortableContext items={columnsId}>
-          {columns.map((col) => (
-            <KanbanColumn
-              key={col.id}
-              column={col}
-              tasks={tasks.filter((task) => task.status === col.id)}
-            />
-          ))}
-        </SortableContext>
+        <div className="flex gap-4">
+          <SortableContext items={columnsId}>
+            {columns.map((col, index) => (
+              <div key={col.id} className="flex gap-4 items-start">
+                <KanbanColumn
+                  column={col}
+                  tasks={tasks.filter((task) => task.status === col.id)}
+                  updateColumn={updateColumn}
+                />
+                <Button
+                  variant="ghost"
+                  className="h-full px-2 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-opacity opacity-20 hover:opacity-100"
+                  onClick={() => createNewColumn(index + 1)}
+                >
+                  <Plus size={20} />
+                </Button>
+              </div>
+            ))}
+          </SortableContext>
+        </div>
       </DndContext>
     </div>
   );
