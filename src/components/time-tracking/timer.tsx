@@ -163,7 +163,7 @@ export default function TimerComponent() {
       <div className="flex items-center gap-2">
         <span className="text-muted-foreground">Working on</span>
         <Select onValueChange={setSelectedProject} disabled={isRunning}>
-          <SelectTrigger className="w-auto h-12 text-base border-none focus:ring-0 bg-transparent shadow-none">
+          <SelectTrigger className="w-auto h-12 text-base border-none focus:ring-0 bg-transparent shadow-none pr-4">
             <SelectValue placeholder="project" />
           </SelectTrigger>
           <SelectContent>
@@ -185,9 +185,9 @@ export default function TimerComponent() {
       </div>
 
       <div className="flex items-center gap-4">
-         <Button size="icon" variant="ghost" className="w-24 h-24 rounded-full" onClick={handleReset}>
-            <RotateCcw className="h-8 w-8" />
-            <span className="sr-only">Reset Timer</span>
+        <Button size="icon" variant="ghost" className="w-24 h-24 rounded-full" onClick={cycleMode}>
+            <CurrentModeIcon className="h-8 w-8" />
+            <span className="sr-only">Change Mode</span>
         </Button>
         <Button
           size="icon"
@@ -199,9 +199,9 @@ export default function TimerComponent() {
           {isRunning ? <Pause className="h-10 w-10" /> : <Play className="h-10 w-10 ml-2" />}
           <span className="sr-only">{isRunning ? 'Pause Timer' : 'Start Timer'}</span>
         </Button>
-        <Button size="icon" variant="ghost" className="w-24 h-24 rounded-full" onClick={cycleMode}>
-            <CurrentModeIcon className="h-8 w-8" />
-            <span className="sr-only">Change Mode</span>
+         <Button size="icon" variant="ghost" className="w-24 h-24 rounded-full" onClick={handleReset}>
+            <RotateCcw className="h-8 w-8" />
+            <span className="sr-only">Reset Timer</span>
         </Button>
       </div>
     </div>
