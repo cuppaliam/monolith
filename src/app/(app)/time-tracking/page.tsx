@@ -1,17 +1,16 @@
-
 'use client';
 
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Timer, Stopwatch, Clock } from 'lucide-react';
+import { Timer, Gauge, Clock } from 'lucide-react';
 import TimerComponent from '@/components/time-tracking/timer';
 
 type TimerMode = 'stopwatch' | 'pomodoro' | 'timer';
 
 const modeConfig = {
   stopwatch: {
-    icon: Stopwatch,
+    icon: Gauge,
     label: 'Stopwatch',
   },
   pomodoro: {
