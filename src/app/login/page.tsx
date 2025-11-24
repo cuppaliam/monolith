@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useFormState } from 'react-dom';
+import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { handleLogin } from './actions';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -22,7 +22,7 @@ function SubmitButton() {
 }
 
 export default function LoginPage() {
-  const [state, formAction] = useFormState(async (prevState: any, formData: FormData) => {
+  const [state, formAction] = useActionState(async (prevState: any, formData: FormData) => {
     const password = formData.get('password') as string;
     return await handleLogin(password);
   }, undefined);
