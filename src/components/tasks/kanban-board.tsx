@@ -5,31 +5,23 @@ import {
   DndContext,
   DragEndEvent,
   DragOverEvent,
-  DragOverlay,
   DragStartEvent,
   PointerSensor,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
 import { SortableContext, arrayMove } from '@dnd-kit/sortable';
-import { createPortal } from 'react-dom';
 
 import { tasks as initialTasks, columns as initialColumns, projects } from '@/lib/data';
 import type { Column, Task, Project } from '@/lib/types';
 
 import KanbanColumn from './kanban-column';
-import TaskCard from './task-card';
 
 export default function KanbanBoard() {
   const [columns, setColumns] = useState<Column[]>(initialColumns);
   const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
 
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
-
-  const [activeColumn, setActiveColumn] = useState<Column | null>(null);
-  const [activeTask, setActiveTask] = useState<Task | null>(null);
-  
-  const getProject = (projectId: string): Project | undefined => projects.find(p => p.id === projectId);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -40,21 +32,10 @@ export default function KanbanBoard() {
   );
 
   function onDragStart(event: DragStartEvent) {
-    if (event.active.data.current?.type === 'Column') {
-      setActiveColumn(event.active.data.current.column);
-      return;
-    }
-
-    if (event.active.data.current?.type === 'Task') {
-      setActiveTask(event.active.data.current.task);
-      return;
-    }
+    // Handling of active elements is not needed without DragOverlay
   }
 
   function onDragEnd(event: DragEndEvent) {
-    setActiveColumn(null);
-    setActiveTask(null);
-
     const { active, over } = event;
     if (!over) return;
 
@@ -131,23 +112,6 @@ export default function KanbanBoard() {
             />
           ))}
         </SortableContext>
-
-        {createPortal(
-          <DragOverlay>
-            {activeColumn && (
-              <KanbanColumn
-                column={activeColumn}
-                tasks={tasks.filter(
-                  (task) => task.status === activeColumn.id
-                )}
-              />
-            )}
-            {activeTask && (
-              <TaskCard task={activeTask} project={getProject(activeTask.projectId)} />
-            )}
-          </DragOverlay>,
-          document.body
-        )}
       </DndContext>
     </div>
   );
