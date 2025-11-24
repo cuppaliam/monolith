@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -11,21 +10,31 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { projects } from '@/lib/data';
-import { Play, Square, Pause, RotateCcw } from 'lucide-react';
+import { Play, Pause, RotateCcw, Timer, Gauge, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '../ui/card';
+import type { LucideIcon } from 'lucide-react';
 
 type TimerMode = 'stopwatch' | 'pomodoro' | 'timer';
 
-interface TimerComponentProps {
-  mode: TimerMode;
+interface ModeConfig {
+  icon: LucideIcon;
+  label: string;
 }
+
+const modeConfig: Record<TimerMode, ModeConfig> = {
+  stopwatch: {
+    icon: Gauge,
+    label: 'Stopwatch',
+  },
+  pomodoro: {
+    icon: Clock,
+    label: 'Pomodoro',
+  },
+  timer: {
+    icon: Timer,
+    label: 'Timer',
+  },
+};
 
 const pomodoroDurations = {
   work: 25 * 60,
@@ -33,7 +42,8 @@ const pomodoroDurations = {
   longBreak: 15 * 60,
 };
 
-export default function TimerComponent({ mode }: TimerComponentProps) {
+export default function TimerComponent() {
+  const [mode, setMode] = useState<TimerMode>('stopwatch');
   const [isRunning, setIsRunning] = useState(false);
   const [time, setTime] = useState(0);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
@@ -45,14 +55,16 @@ export default function TimerComponent({ mode }: TimerComponentProps) {
   const getInitialTime = useCallback(() => {
     switch (mode) {
       case 'pomodoro':
-        return pomodoroDurations[pomodoroState];
+        setPomodoroState('work');
+        setPomodoroCycles(0);
+        return pomodoroDurations.work;
       case 'timer':
         return 15 * 60; // Default 15 minutes for timer
       case 'stopwatch':
       default:
         return 0;
     }
-  }, [mode, pomodoroState]);
+  }, [mode]);
 
   useEffect(() => {
     setIsRunning(false);
@@ -75,10 +87,12 @@ export default function TimerComponent({ mode }: TimerComponentProps) {
           }
           
           // Timer finished
-          setIsRunning(false);
           if (mode === 'pomodoro') {
             // Handle Pomodoro state transition
             if (pomodoroState === 'work') {
+              // Save work session entry
+              console.log(`Pomodoro work session for project ${selectedProject}: ${pomodoroDurations.work} seconds`);
+              
               const newCycles = pomodoroCycles + 1;
               setPomodoroCycles(newCycles);
               if (newCycles % 4 === 0) {
@@ -92,6 +106,9 @@ export default function TimerComponent({ mode }: TimerComponentProps) {
                 setPomodoroState('work');
                 setTime(pomodoroDurations.work);
             }
+            setIsRunning(true); // Auto-start next session
+          } else {
+            setIsRunning(false);
           }
           
           return 0;
@@ -100,7 +117,7 @@ export default function TimerComponent({ mode }: TimerComponentProps) {
     }
 
     return () => clearInterval(interval);
-  }, [isRunning, mode, pomodoroState, pomodoroCycles]);
+  }, [isRunning, mode, pomodoroState, pomodoroCycles, selectedProject]);
 
 
   const handlePrimaryClick = () => {
@@ -109,19 +126,24 @@ export default function TimerComponent({ mode }: TimerComponentProps) {
     }
   };
 
-  const handleReset = () => {
+  const handleStop = () => {
     setIsRunning(false);
-    setTime(getInitialTime());
-    // Here you would typically save the time entry
     if (mode === 'stopwatch' && time > 0) {
         console.log(`Time entry for project ${selectedProject}: ${time} seconds`);
     }
+    setTime(getInitialTime());
+  };
+  
+  const handleReset = () => {
+    setIsRunning(false);
+    setTime(getInitialTime());
   };
 
-  const formatTime = (timeInSeconds: number) => {
-    const minutes = Math.floor(timeInSeconds / 60);
-    const seconds = timeInSeconds % 60;
-    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  const cycleMode = () => {
+    const modes: TimerMode[] = ['stopwatch', 'pomodoro', 'timer'];
+    const currentIndex = modes.indexOf(mode);
+    const nextIndex = (currentIndex + 1) % modes.length;
+    setMode(modes[nextIndex]);
   };
 
   const largeFormatTime = (timeInSeconds: number) => {
@@ -133,6 +155,8 @@ export default function TimerComponent({ mode }: TimerComponentProps) {
     }
     return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   };
+  
+  const CurrentModeIcon = modeConfig[mode].icon;
 
   return (
     <div className="w-full max-w-md flex flex-col items-center gap-8">
@@ -157,19 +181,23 @@ export default function TimerComponent({ mode }: TimerComponentProps) {
       </div>
 
       <div className="flex items-center gap-4">
+         <Button size="icon" variant="ghost" className="w-24 h-24 rounded-full" onClick={handleReset}>
+            <RotateCcw className="h-8 w-8" />
+            <span className="sr-only">Reset Timer</span>
+        </Button>
         <Button
           size="icon"
           className="w-24 h-24 rounded-full"
-          onClick={handlePrimaryClick}
+          onClick={isRunning ? handleStop : handlePrimaryClick}
           disabled={!selectedProject && mode === 'stopwatch'}
           variant={isRunning ? 'destructive' : 'default'}
         >
           {isRunning ? <Pause className="h-10 w-10" /> : <Play className="h-10 w-10 ml-2" />}
           <span className="sr-only">{isRunning ? 'Pause Timer' : 'Start Timer'}</span>
         </Button>
-         <Button size="icon" variant="ghost" className="w-24 h-24 rounded-full" onClick={handleReset}>
-            <RotateCcw className="h-8 w-8" />
-            <span className="sr-only">Reset Timer</span>
+        <Button size="icon" variant="ghost" className="w-24 h-24 rounded-full" onClick={cycleMode}>
+            <CurrentModeIcon className="h-8 w-8" />
+            <span className="sr-only">Change Mode</span>
         </Button>
       </div>
     </div>
