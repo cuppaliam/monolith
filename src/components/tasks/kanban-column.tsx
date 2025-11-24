@@ -91,8 +91,8 @@ export default function KanbanColumn({ column, tasks, updateColumn }: KanbanColu
           )}
         </div>
       </div>
-      <ScrollArea className="flex-grow">
-        <div className="space-y-4 h-full pr-3">
+      <ScrollArea className="flex-grow pr-1">
+        <div className="space-y-4 h-full">
           <SortableContext items={tasksIds}>
             {tasks.map((task) => (
               <TaskCard key={task.id} task={task} project={getProject(task.projectId)} />
