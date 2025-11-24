@@ -160,21 +160,25 @@ export default function TimerComponent() {
 
   return (
     <div className="w-full max-w-md flex flex-col items-center gap-8">
-      <Select onValueChange={setSelectedProject} disabled={isRunning}>
-        <SelectTrigger className="w-full md:w-[280px] h-12 text-base border-none focus:ring-0 bg-transparent shadow-none">
-          <SelectValue placeholder="Select a project to track..." />
-        </SelectTrigger>
-        <SelectContent>
-          {projects.map((project) => (
-            <SelectItem key={project.id} value={project.id}>
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: project.color }} />
-                {project.name}
-              </div>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div className="flex items-center gap-2">
+        <span className="text-muted-foreground">Working on</span>
+        <Select onValueChange={setSelectedProject} disabled={isRunning}>
+          <SelectTrigger className="w-auto h-12 text-base border-none focus:ring-0 bg-transparent shadow-none">
+            <SelectValue placeholder="a project..." />
+          </SelectTrigger>
+          <SelectContent>
+            {projects.map((project) => (
+              <SelectItem key={project.id} value={project.id}>
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: project.color }} />
+                  {project.name}
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
 
       <div className="font-mono" style={{ fontSize: 'clamp(4rem, 15vw, 8rem)' }}>
         {largeFormatTime(time)}
