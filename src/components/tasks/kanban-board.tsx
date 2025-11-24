@@ -131,22 +131,22 @@ export default function KanbanBoard() {
         onDragEnd={onDragEnd}
         onDragOver={onDragOver}
       >
-        <div className="flex gap-1">
+        <div className="flex">
           <SortableContext items={columnsId}>
             {columns.map((col, index) => (
-              <div key={col.id} className="flex gap-1 items-start">
+              <div key={col.id} className="flex items-start">
                 <KanbanColumn
                   column={col}
                   tasks={tasks.filter((task) => task.status === col.id)}
                   updateColumn={updateColumn}
                 />
                 <div className="relative group h-full">
-                  <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-muted-foreground/20 group-hover:bg-primary transition-colors duration-300"></div>
+                   <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-transparent group-hover:bg-accent transition-colors duration-300"></div>
                   <button
                     onClick={() => createNewColumn(index + 1)}
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-8 flex items-center justify-center rounded-full bg-background group-hover:bg-primary group-hover:text-primary-foreground text-muted-foreground/50 opacity-0 group-hover:opacity-100 transition-all duration-300"
+                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-8 flex items-center justify-center bg-transparent text-accent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                   >
-                    <Plus size={16} />
+                    <Plus size={16} className="bg-accent text-accent-foreground rounded-full p-0.5" />
                   </button>
                   <div className="w-4 h-full" />
                 </div>
