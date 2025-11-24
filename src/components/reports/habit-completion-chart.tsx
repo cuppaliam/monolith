@@ -3,7 +3,16 @@
 import { Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { habits, habitLogs } from '@/lib/data';
 import { subDays, format } from 'date-fns';
-import { ChartTooltipContent } from '@/components/ui/chart';
+import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
+import type { ChartConfig } from '@/components/ui/chart';
+
+const chartConfig = {
+  'Completion Rate': {
+    label: 'Completion Rate',
+    color: 'hsl(var(--primary))',
+  },
+} satisfies ChartConfig;
+
 
 export default function HabitCompletionChart() {
   const data = Array.from({ length: 7 }).map((_, i) => {
@@ -14,12 +23,12 @@ export default function HabitCompletionChart() {
     
     return {
       date: format(date, 'MMM d'),
-      'Completion Rate': completionRate.toFixed(0),
+      'Completion Rate': parseFloat(completionRate.toFixed(0)),
     };
   });
 
   return (
-    <ResponsiveContainer width="100%" height="100%">
+    <ChartContainer config={chartConfig} className="w-full h-full">
       <LineChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
         <XAxis
           dataKey="date"
@@ -45,12 +54,12 @@ export default function HabitCompletionChart() {
         <Line
           type="monotone"
           dataKey="Completion Rate"
-          stroke="hsl(var(--primary))"
+          stroke="var(--color-Completion Rate)"
           strokeWidth={2}
-          dot={{ r: 4, fill: 'hsl(var(--primary))' }}
+          dot={{ r: 4, fill: 'var(--color-Completion Rate)' }}
           activeDot={{ r: 6, stroke: 'hsl(var(--background))' }}
         />
       </LineChart>
-    </ResponsiveContainer>
+    </ChartContainer>
   );
 }

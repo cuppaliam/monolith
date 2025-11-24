@@ -2,7 +2,14 @@
 
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { timeEntries, projects } from '@/lib/data';
-import { ChartTooltipContent } from '@/components/ui/chart';
+import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
+import type { ChartConfig } from '@/components/ui/chart';
+
+const chartConfig = {
+  hours: {
+    label: 'Hours',
+  },
+} satisfies ChartConfig;
 
 export default function TimePerProjectChart() {
   const data = projects.map(project => {
@@ -18,7 +25,7 @@ export default function TimePerProjectChart() {
   });
 
   return (
-    <ResponsiveContainer width="100%" height="100%">
+    <ChartContainer config={chartConfig} className="w-full h-full">
       <BarChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
         <XAxis
           dataKey="name"
@@ -43,6 +50,6 @@ export default function TimePerProjectChart() {
         />
         <Bar dataKey="hours" radius={[4, 4, 0, 0]} />
       </BarChart>
-    </ResponsiveContainer>
+    </ChartContainer>
   );
 }
