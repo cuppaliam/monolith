@@ -30,6 +30,7 @@ const navItems = [
   { href: '/tasks', icon: ListTodo, label: 'Tasks' },
   { href: '/habits', icon: Repeat, label: 'Habits' },
   { href: '/reports', icon: BarChart3, label: 'Reports' },
+  { href: '/settings', icon: Settings, label: 'Settings' },
 ];
 
 export default function AppSidebar() {
@@ -71,8 +72,10 @@ export default function AppSidebar() {
             <p className="font-semibold">Workspace</p>
             <p className="text-xs text-muted-foreground">Admin User</p>
           </div>
-          <Button variant="ghost" size="icon" tooltip="Settings">
-            <Settings />
+          <Button asChild variant="ghost" size="icon" tooltip="Settings">
+            <Link href="/settings">
+              <Settings />
+            </Link>
           </Button>
         </div>
       </SidebarFooter>
