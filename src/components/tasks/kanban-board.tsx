@@ -34,6 +34,50 @@ export default function KanbanBoard() {
   function onDragStart(event: DragStartEvent) {
     // Handling of active elements is not needed without DragOverlay
   }
+  
+  function onDragOver(event: DragOverEvent) {
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeId = active.id;
+    const overId = over.id;
+
+    if (activeId === overId) return;
+
+    const isActiveATask = active.data.current?.type === 'Task';
+    const isOverATask = over.data.current?.type === 'Task';
+
+    if (!isActiveATask) return;
+
+    // Dropping a Task over another Task
+    if (isActiveATask && isOverATask) {
+      setTasks((tasks) => {
+        const activeIndex = tasks.findIndex((t) => t.id === activeId);
+        const overIndex = tasks.findIndex((t) => t.id === overId);
+        
+        if (tasks[activeIndex].status !== tasks[overIndex].status) {
+          tasks[activeIndex].status = tasks[overIndex].status;
+          return arrayMove(tasks, activeIndex, overIndex);
+        }
+        
+        return arrayMove(tasks, activeIndex, overIndex);
+      });
+    }
+    
+    const isOverAColumn = over.data.current?.type === 'Column';
+
+    // Dropping a Task over a column
+    if (isActiveATask && isOverAColumn) {
+        setTasks((tasks) => {
+            const activeIndex = tasks.findIndex((t) => t.id === activeId);
+            if (tasks[activeIndex].status !== overId) {
+                tasks[activeIndex].status = overId;
+                return arrayMove(tasks, activeIndex, activeIndex);
+            }
+            return tasks;
+        });
+    }
+  }
 
   function onDragEnd(event: DragEndEvent) {
     const { active, over } = event;
@@ -44,9 +88,8 @@ export default function KanbanBoard() {
 
     if (activeId === overId) return;
     
-    const isActiveATask = active.data.current?.type === 'Task';
-    if (!isActiveATask) {
-      // It's a column
+    const isActiveAColumn = active.data.current?.type === 'Column';
+    if (isActiveAColumn) {
        setColumns((columns) => {
         const activeColumnIndex = columns.findIndex((col) => col.id === activeId);
         const overColumnIndex = columns.findIndex((col) => col.id === overId);
@@ -54,36 +97,6 @@ export default function KanbanBoard() {
       });
       return;
     }
-
-    // It's a task
-    const isOverAColumn = over.data.current?.type === 'Column';
-
-    setTasks((tasks) => {
-      const activeIndex = tasks.findIndex((t) => t.id === activeId);
-      let overIndex: number;
-
-      if (isOverAColumn) {
-        // Task is dropped on a column
-        overIndex = tasks.findIndex(
-          (t) => t.status === overId && tasks[activeIndex].id !== t.id
-        );
-         if (tasks[activeIndex].status !== overId) {
-          tasks[activeIndex].status = overId as any;
-          return arrayMove(tasks, activeIndex, overIndex >= 0 ? overIndex : tasks.length -1);
-        }
-        return tasks;
-      }
-      
-      // Task is dropped on another task
-      overIndex = tasks.findIndex((t) => t.id === overId);
-      if (tasks[activeIndex].status !== tasks[overIndex].status) {
-        tasks[activeIndex].status = tasks[overIndex].status;
-        return arrayMove(tasks, activeIndex, overIndex);
-      }
-      
-      return arrayMove(tasks, activeIndex, overIndex);
-    });
-
   }
 
 
@@ -93,6 +106,7 @@ export default function KanbanBoard() {
         sensors={sensors}
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
+        onDragOver={onDragOver}
       >
         <SortableContext items={columnsId}>
           {columns.map((col) => (
