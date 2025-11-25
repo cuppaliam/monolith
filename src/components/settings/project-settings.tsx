@@ -30,6 +30,11 @@ const availableColors = [
   'hsl(var(--chart-3))',
   'hsl(var(--chart-4))',
   'hsl(var(--chart-5))',
+  'hsl(350, 80%, 85%)', // Light Pink
+  'hsl(60, 90%, 80%)',  // Light Yellow
+  'hsl(200, 80%, 85%)', // Light Blue
+  'hsl(140, 70%, 80%)', // Light Green
+  'hsl(280, 80%, 90%)', // Light Purple
 ];
 
 const getNewProjectTemplate = (): Project => ({
@@ -105,7 +110,7 @@ export default function ProjectSettings() {
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                className="w-10 h-10 p-0 border-2"
+                className="w-8 h-8 p-0 border-2"
                 style={{
                   backgroundColor: isNew && !project ? 'transparent' : currentProject.color,
                   borderColor: currentProject.color
@@ -115,13 +120,13 @@ export default function ProjectSettings() {
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-2">
-              <div className="flex gap-1">
+              <div className="grid grid-cols-5 gap-1">
                 {availableColors.map((color) => (
                   <Button
                     key={color}
                     variant="ghost"
                     className={cn(
-                      "h-8 w-8 rounded-full p-0",
+                      "h-6 w-6 rounded-full p-0",
                       currentProject.color === color && "ring-2 ring-ring"
                     )}
                     style={{ backgroundColor: color }}
