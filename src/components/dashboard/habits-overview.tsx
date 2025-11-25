@@ -12,9 +12,6 @@ import { calculateStreaks } from '@/lib/streaks';
 export default function HabitsOverview() {
   const todayStr = format(new Date(), 'yyyy-MM-dd');
   const todaysLogs = habitLogs.filter(log => log.date === todayStr);
-  const completedToday = todaysLogs.length;
-  const totalHabits = habits.filter(h => h.active).length;
-  const progress = totalHabits > 0 ? (completedToday / totalHabits) * 100 : 0;
   
   const streaks = useMemo(() => calculateStreaks(habits, habitLogs), [habits, habitLogs]);
 
@@ -27,7 +24,6 @@ export default function HabitsOverview() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Progress value={progress} className="mb-4" />
         <div className="space-y-4">
           {habits.filter(h => h.active).slice(0, 4).map(habit => {
             const isCompleted = todaysLogs.some(log => log.habitId === habit.id);
