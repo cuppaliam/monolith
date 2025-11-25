@@ -1,5 +1,5 @@
 'use client';
-import { useCollection, useFirebase, useUser } from '@/firebase';
+import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -11,13 +11,13 @@ export default function ProjectGoals() {
   const { firestore } = useFirebase();
   const { user } = useUser();
 
-  const projectsQuery = useMemo(() => {
+  const projectsQuery = useMemoFirebase(() => {
     if (!user) return null;
     return query(collection(firestore, 'projects'), where('ownerId', '==', user.uid));
   }, [firestore, user]);
   const { data: projects } = useCollection<Project>(projectsQuery);
 
-  const timeEntriesQuery = useMemo(() => {
+  const timeEntriesQuery = useMemoFirebase(() => {
     if (!user) return null;
     // This is not ideal, we should query time entries per project, but for simplicity...
     return query(collection(firestore, 'time_entries'), where('ownerId', '==', user.uid));
@@ -30,7 +30,7 @@ export default function ProjectGoals() {
   const activeProjects = (projects ?? []).filter(p => p.status === 'active' && p.hoursPerWeek > 0);
 
   const weeklyEntries = (timeEntries ?? []).filter(entry => 
-    isWithinInterval(new Date(entry.startTime), { start: weekStart, end: today })
+    entry.startTime && isWithinInterval(new Date(entry.startTime), { start: weekStart, end: today })
   );
 
   return (
