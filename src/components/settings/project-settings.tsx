@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -19,9 +19,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { projects as initialProjects } from '@/lib/data';
+import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
+import { collection, doc, query, where } from 'firebase/firestore';
+import { setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import type { Project } from '@/lib/types';
-import { Trash2, Palette } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 
@@ -38,17 +40,31 @@ const availableColors = [
   'hsl(280, 80%, 90%)', // Light Purple
 ];
 
-const getNewProjectTemplate = (): Project => ({
-  id: `new-${Date.now()}`,
+const getNewProjectTemplate = (ownerId: string): Omit<Project, 'id' | 'color'> => ({
   name: '',
-  color: availableColors[0],
   status: 'active',
   hoursPerWeek: 0,
+  ownerId: ownerId,
 });
 
 export default function ProjectSettings() {
-  const [projects, setProjects] = useState<Project[]>(initialProjects);
-  const [newProject, setNewProject] = useState<Project | null>(null);
+  const { firestore } = useFirebase();
+  const { user } = useUser();
+
+  const projectsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return query(collection(firestore, 'projects'), where('ownerId', '==', user.uid));
+  }, [firestore, user]);
+  const { data: initialProjects } = useCollection<Project>(projectsQuery);
+
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [newProject, setNewProject] = useState<Partial<Project> | null>(null);
+
+  useEffect(() => {
+    if (initialProjects) {
+      setProjects(initialProjects);
+    }
+  }, [initialProjects]);
 
   const assignColor = (index: number) => availableColors[index % availableColors.length];
 
@@ -65,47 +81,68 @@ export default function ProjectSettings() {
   };
 
   const handleNewProjectChange = (
-    field: keyof Project,
+    field: keyof Omit<Project, 'id'>,
     value: string | number | 'active' | 'archived' | 'completed'
   ) => {
-    if (!newProject) {
-      setNewProject({ ...getNewProjectTemplate(), color: assignColor(projects.length), [field]: value });
-    } else {
-      setNewProject((prev) => ({ ...prev!, [field]: value }));
-    }
+    if (!user) return;
+    setNewProject((prev) => ({
+      ...getNewProjectTemplate(user.uid),
+      ...prev,
+      [field]: value
+    }));
   };
 
   const commitNewProject = () => {
-    if (newProject && newProject.name.trim() !== '') {
-      const projectToCommit = {
+    if (newProject && newProject.name && newProject.name.trim() !== '' && user && firestore) {
+      const newId = `project-${Date.now()}`;
+      const projectToCommit: Project = { 
+        ...getNewProjectTemplate(user.uid),
         ...newProject,
-        id: `project-${Date.now()}`,
+        id: newId,
         color: newProject.color || assignColor(projects.length),
-      };
-      setProjects([...projects, projectToCommit]);
+      } as Project;
+
+      const docRef = doc(firestore, 'projects', newId);
+      setDocumentNonBlocking(docRef, projectToCommit, { merge: false });
+      
+      setProjects(prev => [...prev, projectToCommit]);
       setNewProject(null);
     }
   };
 
   const handleDeleteProject = (projectId: string) => {
+    if (!firestore) return;
+    const docRef = doc(firestore, 'projects', projectId);
+    deleteDocumentNonBlocking(docRef);
     setProjects((prev) => prev.filter((p) => p.id !== projectId));
   };
+  
+  const handleSaveChanges = () => {
+    if (!firestore) return;
+    projects.forEach(project => {
+      // Only update if it's an existing project
+      if (initialProjects?.some(p => p.id === project.id)) {
+        const docRef = doc(firestore, 'projects', project.id);
+        setDocumentNonBlocking(docRef, project, { merge: true });
+      }
+    });
+  }
 
-  const renderProjectRow = (project: Project | null, isNew: boolean) => {
-    const currentProject = project || getNewProjectTemplate();
+  const renderProjectRow = (project: Partial<Project> | null, isNew: boolean) => {
+    const currentProject = project || (user ? getNewProjectTemplate(user.uid) : {});
 
     const changeHandler = isNew
       ? (field: keyof Project, value: any) => handleNewProjectChange(field, value)
-      : (field: keyof Project, value: any) => handleProjectChange(currentProject.id, field, value);
+      : (field: keyof Project, value: any) => handleProjectChange(currentProject.id!, field, value);
 
-    const onBlurHandler = (e: React.FocusEvent<HTMLInputElement>) => {
-      if (isNew && newProject && newProject.name.trim() !== '') {
+    const onBlurHandler = () => {
+      if (isNew && newProject && newProject.name && newProject.name.trim() !== '') {
         commitNewProject();
       }
     };
 
     return (
-      <TableRow key={currentProject.id} className="hover:bg-transparent group">
+      <TableRow key={currentProject.id || 'new'} className="hover:bg-transparent group">
         <TableCell className="p-2 w-16 flex justify-center">
            <Popover>
             <PopoverTrigger asChild>
@@ -140,7 +177,7 @@ export default function ProjectSettings() {
         </TableCell>
         <TableCell className="p-2">
           <Input
-            value={currentProject.name}
+            value={currentProject.name || ''}
             placeholder={isNew ? 'Add a new project...' : ''}
             onChange={(e) => changeHandler('name', e.target.value)}
             onBlur={onBlurHandler}
@@ -173,7 +210,7 @@ export default function ProjectSettings() {
         <TableCell className="p-2">
           <Input
             type="number"
-            value={currentProject.hoursPerWeek}
+            value={currentProject.hoursPerWeek || 0}
             onChange={(e) =>
               changeHandler('hoursPerWeek', parseInt(e.target.value, 10) || 0)
             }
@@ -188,7 +225,7 @@ export default function ProjectSettings() {
               variant="ghost"
               size="icon"
               className="h-8 w-8 text-muted-foreground opacity-20 group-hover:opacity-100 hover:text-destructive"
-              onClick={() => handleDeleteProject(currentProject.id)}
+              onClick={() => handleDeleteProject(currentProject.id!)}
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -224,7 +261,7 @@ export default function ProjectSettings() {
         </Table>
       </div>
       <div className="flex justify-end mt-6">
-        <Button>Save Changes</Button>
+        <Button onClick={handleSaveChanges}>Save Changes</Button>
       </div>
     </div>
   );

@@ -26,7 +26,8 @@ export type Task = {
   priority: TaskPriority;
   dueDate: string;
   projectId: string;
-  createdAt: string;
+  createdAt?: string; // made optional
+  ownerId: string;
 };
 
 export type TimeEntry = {
@@ -35,6 +36,7 @@ export type TimeEntry = {
   startTime: string;
   endTime: string;
   duration: number; // in seconds
+  ownerId: string;
 };
 
 export type Habit = {
@@ -45,6 +47,7 @@ export type Habit = {
   frequency: number;
   goal: 'build' | 'stop';
   color: string;
+  ownerId: string;
 };
 
 export type HabitLog = {

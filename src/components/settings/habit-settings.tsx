@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -20,23 +20,39 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { habits as initialHabits } from '@/lib/data';
+import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
+import { setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import type { Habit } from '@/lib/types';
 import { Trash2 } from 'lucide-react';
 
-const getNewHabitTemplate = (): Habit => ({
-  id: `new-${Date.now()}`,
+const getNewHabitTemplate = (ownerId: string): Omit<Habit, 'id' | 'color'> => ({
   name: '',
   active: true,
   period: 'week',
   frequency: 1,
   goal: 'build',
-  color: '', // Color will be assigned on commit
+  ownerId,
 });
 
 export default function HabitSettings() {
-  const [habits, setHabits] = useState<Habit[]>(initialHabits);
-  const [newHabit, setNewHabit] = useState<Habit | null>(null);
+  const { firestore } = useFirebase();
+  const { user } = useUser();
+
+  const habitsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return collection(firestore, `users/${user.uid}/habits`);
+  }, [firestore, user]);
+  const { data: initialHabits } = useCollection<Habit>(habitsQuery);
+
+  const [habits, setHabits] = useState<Habit[]>([]);
+  const [newHabit, setNewHabit] = useState<Partial<Habit> | null>(null);
+
+  useEffect(() => {
+    if (initialHabits) {
+      setHabits(initialHabits);
+    }
+  }, [initialHabits]);
 
   const assignColor = (index: number) => `hsl(var(--chart-${(index % 5) + 1}))`;
 
@@ -53,50 +69,71 @@ export default function HabitSettings() {
   };
   
   const handleNewHabitChange = (
-    field: keyof Habit,
+    field: keyof Omit<Habit, 'id'>,
     value: string | number | boolean | 'build' | 'stop'
   ) => {
-    if (!newHabit) {
-        setNewHabit({ ...getNewHabitTemplate(), [field]: value });
-    } else {
-        setNewHabit((prev) => ({ ...prev!, [field]: value }));
-    }
+    if (!user) return;
+    setNewHabit((prev) => ({
+      ...getNewHabitTemplate(user.uid),
+      ...prev,
+      [field]: value
+    }));
   };
 
   const commitNewHabit = () => {
-    if (newHabit && newHabit.name.trim() !== '') {
-      const habitToCommit = { 
-        ...newHabit, 
-        id: `habit-${Date.now()}`, // Ensure a more unique ID
+    if (newHabit && newHabit.name && newHabit.name.trim() !== '' && user && firestore) {
+      const newId = `habit-${Date.now()}`;
+      const habitToCommit: Habit = { 
+        ...getNewHabitTemplate(user.uid),
+        ...newHabit,
+        id: newId,
         color: assignColor(habits.length) 
-      };
-      setHabits([...habits, habitToCommit]);
+      } as Habit;
+      
+      const docRef = doc(firestore, `users/${user.uid}/habits`, newId);
+      setDocumentNonBlocking(docRef, habitToCommit, { merge: false });
+      
+      setHabits(prev => [...prev, habitToCommit]);
       setNewHabit(null);
     }
   };
 
   const handleDeleteHabit = (habitId: string) => {
+    if (!user || !firestore) return;
+    const docRef = doc(firestore, `users/${user.uid}/habits`, habitId);
+    deleteDocumentNonBlocking(docRef);
     setHabits((prev) => prev.filter((h) => h.id !== habitId));
   };
+  
+  const handleSaveChanges = () => {
+    if (!user || !firestore) return;
+    habits.forEach(habit => {
+      // only update if it's an existing habit
+      if (initialHabits?.some(h => h.id === habit.id)) {
+        const docRef = doc(firestore, `users/${user.uid}/habits`, habit.id);
+        setDocumentNonBlocking(docRef, habit, { merge: true });
+      }
+    });
+  }
 
-  const renderHabitRow = (habit: Habit | null, isNew: boolean) => {
-    const currentHabit = habit || getNewHabitTemplate();
+  const renderHabitRow = (habit: Partial<Habit> | null, isNew: boolean) => {
+    const currentHabit = habit || (user ? getNewHabitTemplate(user.uid) : {});
     
     const changeHandler = isNew 
       ? (field: keyof Habit, value: any) => handleNewHabitChange(field, value)
-      : (field: keyof Habit, value: any) => handleHabitChange(currentHabit.id, field, value);
+      : (field: keyof Habit, value: any) => handleHabitChange(currentHabit.id!, field, value);
 
-    const onBlurHandler = (e: React.FocusEvent<HTMLInputElement>) => {
-        if (isNew && newHabit && newHabit.name.trim() !== '') {
+    const onBlurHandler = () => {
+        if (isNew && newHabit && newHabit.name && newHabit.name.trim() !== '') {
             commitNewHabit();
         }
     }
 
     return (
-        <TableRow key={currentHabit.id} className="hover:bg-transparent group">
+        <TableRow key={currentHabit.id || 'new'} className="hover:bg-transparent group">
             <TableCell className="p-2">
                 <Input
-                    value={currentHabit.name}
+                    value={currentHabit.name || ''}
                     placeholder={isNew ? 'Add a new habit...' : ''}
                     onChange={(e) => changeHandler('name', e.target.value)}
                     onBlur={onBlurHandler}
@@ -172,7 +209,7 @@ export default function HabitSettings() {
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 text-muted-foreground opacity-20 group-hover:opacity-100 hover:text-destructive"
-                  onClick={() => handleDeleteHabit(currentHabit.id)}
+                  onClick={() => handleDeleteHabit(currentHabit.id!)}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -209,7 +246,7 @@ export default function HabitSettings() {
         </Table>
       </div>
         <div className="flex justify-end mt-6">
-          <Button>Save Changes</Button>
+          <Button onClick={handleSaveChanges}>Save Changes</Button>
         </div>
     </div>
   );
