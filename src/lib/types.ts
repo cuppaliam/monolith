@@ -5,6 +5,7 @@ export type Project = {
   color: string;
   status: 'active' | 'archived' | 'completed';
   hoursPerWeek: number;
+  ownerId: string;
 };
 
 export type TaskStatus = 'todo' | 'inprogress' | 'done' | 'backlog';

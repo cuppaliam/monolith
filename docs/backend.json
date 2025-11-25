@@ -1,5 +1,20 @@
 {
   "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user in the system.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
     "Project": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Project",
@@ -17,11 +32,16 @@
         "description": {
           "type": "string",
           "description": "A detailed description of the project."
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "The ID of the user who owns the project."
         }
       },
       "required": [
         "id",
-        "name"
+        "name",
+        "ownerId"
       ]
     },
     "Task": {
@@ -107,7 +127,6 @@
       "required": [
         "id",
         "projectId",
-        "taskId",
         "startTime",
         "endTime",
         "duration"
@@ -219,21 +238,17 @@
         }
       },
       {
-        "path": "projects/{projectId}/tasks/{taskId}/time_entries/{timeEntryId}",
+        "path": "projects/{projectId}/time_entries/{timeEntryId}",
         "definition": {
           "entityName": "TimeEntry",
           "schema": {
             "$ref": "#/backend/entities/TimeEntry"
           },
-          "description": "Stores time entries for specific tasks within a project. Each document represents a single time entry. Includes denormalized 'projectId' and 'taskId' for efficient querying.",
+          "description": "Stores time entries for specific tasks within a project. Each document represents a single time entry. Includes denormalized 'projectId' for efficient querying.",
           "params": [
             {
               "name": "projectId",
               "description": "The unique identifier of the project."
-            },
-            {
-              "name": "taskId",
-              "description": "The unique identifier of the task."
             },
             {
               "name": "timeEntryId",
@@ -263,7 +278,7 @@
         }
       },
       {
-        "path": "users/{userId}/habits/{habitId}/habit_logs/{habitLogId}",
+        "path": "users/{userId}/habit_logs/{habitLogId}",
         "definition": {
           "entityName": "HabitLog",
           "schema": {
@@ -274,10 +289,6 @@
             {
               "name": "userId",
               "description": "The unique identifier of the user."
-            },
-            {
-              "name": "habitId",
-              "description": "The unique identifier of the habit."
             },
             {
               "name": "habitLogId",

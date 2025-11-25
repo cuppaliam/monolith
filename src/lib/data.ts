@@ -3,10 +3,10 @@ import type { Project, Task, TimeEntry, Habit, HabitLog, Column } from './types'
 import { subDays, formatISO, startOfWeek, addDays, format, eachDayOfInterval } from 'date-fns';
 
 export const projects: Project[] = [
-  { id: 'proj-1', name: 'Monolith App', color: 'hsl(var(--chart-1))', status: 'active', hoursPerWeek: 20 },
-  { id: 'proj-2', name: 'Client Website', color: 'hsl(var(--chart-2))', status: 'active', hoursPerWeek: 15 },
-  { id: 'proj-3', name: 'Internal Tools', color: 'hsl(var(--chart-3))', status: 'archived', hoursPerWeek: 5 },
-  { id: 'proj-4', name: 'Marketing Campaign', color: 'hsl(var(--chart-4))', status: 'completed', hoursPerWeek: 8 },
+  { id: 'proj-1', name: 'Monolith App', color: 'hsl(var(--chart-1))', status: 'active', hoursPerWeek: 20, ownerId: '1' },
+  { id: 'proj-2', name: 'Client Website', color: 'hsl(var(--chart-2))', status: 'active', hoursPerWeek: 15, ownerId: '1' },
+  { id: 'proj-3', name: 'Internal Tools', color: 'hsl(var(--chart-3))', status: 'archived', hoursPerWeek: 5, ownerId: '1' },
+  { id: 'proj-4', name: 'Marketing Campaign', color: 'hsl(var(--chart-4))', status: 'completed', hoursPerWeek: 8, ownerId: '1' },
 ];
 
 export const columns: Column[] = [

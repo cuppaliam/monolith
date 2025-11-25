@@ -74,69 +74,23 @@ service cloud.firestore {
     // ----------------------------------------------------------------------
     // Collection Rules
     // ----------------------------------------------------------------------
-
-    /**
-     * @description Controls access to Project documents. Projects are publicly readable,
-     * but writes are restricted to owners.
-     * @path /projects/{projectId}
-     * @allow (get) Any user, signed in or not, can read a project document.
-     * @deny (create) A user attempts to create a project, which is disallowed until an ownership model is defined in the schema.
-     * @principle Public Read with Owner-Only Writes.
-     */
     match /projects/{projectId} {
-      allow get, list: if true;
+      allow list: if isSignedIn();
+      allow get: if isOwner(resource.data.ownerId) || isAdmin();
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if isOwner(resource.data.ownerId) || isAdmin();
 
-      // CRITICAL: The 'Project' entity is missing an 'ownerId' or similar authorization field.
-      // Owner-only writes cannot be securely implemented without it.
-      // To enable writes, add an 'ownerId' field to your Project documents, where the value is
-      // the UID of the user who should have write permissions. Then, update the rules below.
-      //
-      // Example for 'create': allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
-      // Example for 'update'/'delete': allow update, delete: if isOwner(resource.data.ownerId) || isAdmin();
-      allow create: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-    }
+      match /tasks/{taskId} {
+        allow list, get: if isSignedIn() && get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid;
+        allow create: if isSignedIn() && get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid;
+        allow update, delete: if isSignedIn() && get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid;
+      }
 
-    /**
-     * @description Controls access to Task subcollection documents. Access is derived
-     * from the parent Project's ownership.
-     * @path /projects/{projectId}/tasks/{taskId}
-     * @allow (get) Any user can read a task since its parent project is public.
-     * @deny (create) A user attempts to create a task, which is disallowed until the parent project has an ownership model.
-     * @principle Inherited Access via Parent Document.
-     */
-    match /projects/{projectId}/tasks/{taskId} {
-      allow get, list: if true;
-
-      // CRITICAL: Writes to tasks are disabled because the parent 'Project'
-      // entity is missing an 'ownerId' field. To enable writes, add an 'ownerId'
-      // to the parent project document and update these rules to check it using `get()`.
-      //
-      // Example for 'create':
-      // allow create: if isSignedIn() && get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid && hasValidTaskRelationshipsOnCreate(projectId);
-      allow create: if false; // TODO: Add parent owner validation once Project schema is updated.
-      allow update: if false; // TODO: Add parent owner validation once Project schema is updated.
-      allow delete: if false; // TODO: Add parent owner validation once Project schema is updated.
-    }
-
-    /**
-     * @description Controls access to TimeEntry subcollection documents. Access is
-     * derived from the parent Project's ownership.
-     * @path /projects/{projectId}/tasks/{taskId}/time_entries/{timeEntryId}
-     * @allow (get) Any user can read a time entry since its parent project is public.
-     * @deny (create) A user attempts to create a time entry, which is disallowed until the parent project has an ownership model.
-     * @principle Inherited Access via Parent Document.
-     */
-    match /projects/{projectId}/tasks/{taskId}/time_entries/{timeEntryId} {
-      allow get, list: if true;
-
-      // CRITICAL: Writes to time entries are disabled for the same reason as tasks.
-      // The parent 'Project' entity requires an 'ownerId' field to secure writes.
-      // Update these rules after updating the Project schema and rules.
-      allow create: if false; // TODO: Add parent owner validation once Project schema is updated.
-      allow update: if false; // TODO: Add parent owner validation once Project schema is updated.
-      allow delete: if false; // TODO: Add parent owner validation once Project schema is updated.
+      match /time_entries/{timeEntryId} {
+        allow list, get: if isSignedIn() && get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid;
+        allow create: if isSignedIn() && get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid;
+        allow update, delete: if isSignedIn() && get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid;
+      }
     }
 
     /**
@@ -147,25 +101,17 @@ service cloud.firestore {
      * @principle Restricts access to a user's own data tree (Ownership).
      */
     match /users/{userId}/habits/{habitId} {
-      allow get, list: if isOwner(userId) || isAdmin();
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId) || isAdmin();
-      allow delete: if isExistingOwner(userId) || isAdmin();
+      allow get, list, create, update, delete: if isOwner(userId) || isAdmin();
+    }
+    
+    match /users/{userId}/habit_logs/{habitLogId} {
+        allow get, list, create, update, delete: if isOwner(userId) || isAdmin();
+    }
+    
+    match /users/{userId} {
+      allow get, create, update, delete: if isOwner(userId) || isAdmin();
     }
 
-    /**
-     * @description Secures a user's private HabitLog documents.
-     * @path /users/{userId}/habits/{habitId}/habit_logs/{habitLogId}
-     * @allow (create) User `abc` creates a log for their own habit at `/users/abc/habits/xyz/habit_logs/123`.
-     * @deny (list) User `xyz` attempts to list logs from `/users/abc/habits/xyz/habit_logs`.
-     * @principle Restricts access to a user's own data tree (Ownership).
-     */
-    match /users/{userId}/habits/{habitId}/habit_logs/{habitLogId} {
-      allow get, list: if isOwner(userId) || isAdmin();
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId) || isAdmin();
-      allow delete: if isExistingOwner(userId) || isAdmin();
-    }
 
     /**
      * @description Manages admin role documents. Existence of a document grants

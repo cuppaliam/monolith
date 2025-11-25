@@ -1,15 +1,32 @@
 'use client';
 
-import Link from 'next/link';
-import { tasks, projects } from '@/lib/data';
+import { useMemo } from 'react';
+import { useCollection, useFirebase, useUser } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { isAfter, startOfToday, addDays, parseISO } from 'date-fns';
-import { ArrowRight } from 'lucide-react';
-import type { TaskPriority } from '@/lib/types';
+import type { Task, Project, TaskPriority } from '@/lib/types';
 
 export default function UpcomingTasks() {
+  const { firestore } = useFirebase();
+  const { user } = useUser();
+
+  const tasksQuery = useMemo(() => {
+    if (!user) return null;
+    // Ideally we'd query based on dueDate, but that requires indexes.
+    // Filtering client-side for this demo.
+    return query(collection(firestore, 'tasks'), where('ownerId', '==', user.uid));
+  }, [firestore, user]);
+  const { data: tasks } = useCollection<Task>(tasksQuery);
+  
+  const projectsQuery = useMemo(() => {
+    if (!user) return null;
+    return query(collection(firestore, 'projects'), where('ownerId', '==', user.uid));
+  }, [firestore, user]);
+  const { data: projects } = useCollection<Project>(projectsQuery);
+
+
   const today = startOfToday();
   const nextWeek = addDays(today, 7);
   
@@ -20,14 +37,15 @@ export default function UpcomingTasks() {
     low: 4,
   };
 
-  const upcoming = tasks
+  const upcoming = useMemo(() => (tasks ?? [])
     .filter(task => {
+        if (!task.dueDate) return false;
         const dueDate = parseISO(task.dueDate);
         return task.status !== 'done' && isAfter(dueDate, today) && isAfter(nextWeek, dueDate);
     })
-    .sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+    .sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]), [tasks, today, nextWeek]);
 
-  const getProject = (projectId: string) => projects.find(p => p.id === projectId);
+  const getProject = (projectId: string) => (projects ?? []).find(p => p.id === projectId);
   
   const priorityVariantMap: Record<TaskPriority, "destructive" | "default" | "secondary" | "outline"> = {
     low: 'outline',
@@ -38,13 +56,11 @@ export default function UpcomingTasks() {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center">
-        <div className="grid gap-2">
-            <CardTitle>Upcoming Tasks</CardTitle>
-            <CardDescription>
-            You have {upcoming.length} task{upcoming.length !== 1 && 's'} due in the next 7 days.
-            </CardDescription>
-        </div>
+      <CardHeader>
+        <CardTitle>Upcoming Tasks</CardTitle>
+        <CardDescription>
+        You have {upcoming.length} task{upcoming.length !== 1 && 's'} due in the next 7 days.
+        </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">
         {upcoming.length > 0 ? (
