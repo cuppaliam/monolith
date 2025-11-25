@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -191,6 +192,36 @@
         "date",
         "completed"
       ]
+    },
+     "Column": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Column",
+      "type": "object",
+      "description": "Represents a column in the Kanban board.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Column entity."
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the column."
+        },
+        "order": {
+          "type": "number",
+          "description": "The display order of the column."
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "The ID of the user who owns the column."
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "order",
+        "ownerId"
+      ]
     }
   },
   "auth": {
@@ -293,6 +324,22 @@
             {
               "name": "habitLogId",
               "description": "The unique identifier of the habit log."
+            }
+          ]
+        }
+      },
+       {
+        "path": "columns/{columnId}",
+        "definition": {
+          "entityName": "Column",
+          "schema": {
+            "$ref": "#/backend/entities/Column"
+          },
+          "description": "Stores Kanban board columns for a user.",
+          "params": [
+            {
+              "name": "columnId",
+              "description": "The unique identifier of the column."
             }
           ]
         }

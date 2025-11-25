@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -9,8 +10,10 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  DragOverlay,
 } from '@dnd-kit/core';
 import { SortableContext, arrayMove } from '@dnd-kit/sortable';
+import { createPortal } from 'react-dom';
 import { Plus } from 'lucide-react';
 import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
 import { collection, doc, query, where } from 'firebase/firestore';
@@ -18,22 +21,28 @@ import { setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-b
 import type { Column, Task } from '@/lib/types';
 import KanbanColumn from './kanban-column';
 import { Button } from '../ui/button';
-
-function generateId() {
-  return `task-${Date.now()}`;
-}
+import TaskCard from './task-card';
 
 export default function KanbanBoard() {
   const { firestore } = useFirebase();
   const { user } = useUser();
 
-  const columns: Column[] = [
-    { id: 'backlog', title: 'Backlog' },
-    { id: 'todo', title: 'To Do' },
-    { id: 'inprogress', title: 'In Progress' },
-    { id: 'done', title: 'Done' },
-  ];
+  const columnsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return query(collection(firestore, 'columns'), where('ownerId', '==', user.uid));
+  }, [firestore, user]);
+  const { data: initialColumns } = useCollection<Column>(columnsQuery);
+
+  const [columns, setColumns] = useState<Column[]>([]);
   const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
+
+  useEffect(() => {
+    if (initialColumns) {
+      // Sort by order
+      const sorted = [...initialColumns].sort((a, b) => a.order - b.order);
+      setColumns(sorted);
+    }
+  }, [initialColumns]);
 
   const tasksQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
@@ -42,6 +51,7 @@ export default function KanbanBoard() {
   const { data: initialTasks } = useCollection<Task>(tasksQuery);
 
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
 
   useEffect(() => {
     if (initialTasks) {
@@ -57,6 +67,24 @@ export default function KanbanBoard() {
     })
   );
   
+  function createNewColumn() {
+    if (!user || !firestore) return;
+    const newColumn: Omit<Column, 'id'> = {
+      title: `Column ${columns.length + 1}`,
+      order: columns.length + 1,
+      ownerId: user.uid,
+    };
+    const columnsCollection = collection(firestore, 'columns');
+    addDocumentNonBlocking(columnsCollection, newColumn);
+  }
+
+  function updateColumn(updatedColumn: Column) {
+    if (!firestore || !user) return;
+    const colRef = doc(firestore, 'columns', updatedColumn.id.toString());
+    setDocumentNonBlocking(colRef, updatedColumn, { merge: true });
+    setColumns(prev => prev.map(c => c.id === updatedColumn.id ? updatedColumn : c));
+  }
+  
   function updateTask(updatedTask: Task) {
     if (!firestore || !user) return;
     const taskRef = doc(firestore, 'tasks', updatedTask.id.toString());
@@ -65,7 +93,10 @@ export default function KanbanBoard() {
   }
 
   function onDragStart(event: DragStartEvent) {
-    // Handling of active elements is not needed without DragOverlay
+    if (event.active.data.current?.type === 'Task') {
+      setActiveTask(event.active.data.current.task);
+      return;
+    }
   }
   
   function onDragOver(event: DragOverEvent) {
@@ -103,7 +134,7 @@ export default function KanbanBoard() {
         setTasks((tasks) => {
             const activeIndex = tasks.findIndex((t) => t.id === activeId);
             if (tasks[activeIndex].status !== overId) {
-                const updatedTask = { ...tasks[activeIndex], status: overId };
+                const updatedTask = { ...tasks[activeIndex], status: overId as string };
                 updateTask(updatedTask);
                 return arrayMove(tasks, activeIndex, activeIndex);
             }
@@ -113,7 +144,33 @@ export default function KanbanBoard() {
   }
 
   function onDragEnd(event: DragEndEvent) {
-    // No specific onDragEnd logic needed for columns as they are static.
+    setActiveTask(null);
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeId = active.id;
+    const overId = over.id;
+    
+    if (activeId === overId) return;
+    
+    const isActiveAColumn = active.data.current?.type === "Column";
+    if (isActiveAColumn) {
+      setColumns(columns => {
+        const activeColumnIndex = columns.findIndex(col => col.id === activeId);
+        const overColumnIndex = columns.findIndex(col => col.id === overId);
+
+        const newOrder = arrayMove(columns, activeColumnIndex, overColumnIndex);
+        
+        // Update order in firestore
+        newOrder.forEach((col, index) => {
+          if (col.order !== index) {
+            updateColumn({ ...col, order: index });
+          }
+        });
+
+        return newOrder;
+      });
+    }
   }
 
   return (
@@ -130,11 +187,23 @@ export default function KanbanBoard() {
               <KanbanColumn
                 key={col.id}
                 column={col}
+                updateColumn={updateColumn}
                 tasks={tasks.filter((task) => task.status === col.id)}
               />
             ))}
           </SortableContext>
+           <Button variant="outline" className="h-full w-80 flex-shrink-0" onClick={createNewColumn}>
+            <Plus className="mr-2" /> Add Column
+          </Button>
         </div>
+        {typeof document !== 'undefined' && createPortal(
+          <DragOverlay>
+            {activeTask && (
+              <TaskCard task={activeTask} />
+            )}
+          </DragOverlay>,
+          document.body
+        )}
       </DndContext>
     </div>
   );

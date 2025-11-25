@@ -17,6 +17,8 @@ export type Id = string | number;
 export type Column = {
   id: Id;
   title: string;
+  order: number;
+  ownerId: string;
 };
 
 export type Task = {

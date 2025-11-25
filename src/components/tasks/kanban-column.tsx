@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { SortableContext, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
@@ -8,15 +9,18 @@ import { collection, query, where } from 'firebase/firestore';
 import type { Column, Task, Project } from '@/lib/types';
 import TaskCard from './task-card';
 import { ScrollArea } from '../ui/scroll-area';
+import { Input } from '../ui/input';
 
 interface KanbanColumnProps {
   column: Column;
+  updateColumn: (column: Column) => void;
   tasks: Task[];
 }
 
-export default function KanbanColumn({ column, tasks }: KanbanColumnProps) {
+export default function KanbanColumn({ column, updateColumn, tasks }: KanbanColumnProps) {
   const { firestore } = useFirebase();
   const { user } = useUser();
+  const [isEditing, setIsEditing] = useState(false);
   
   const tasksIds = useMemo(() => {
     return tasks.map((task) => task.id);
@@ -43,7 +47,6 @@ export default function KanbanColumn({ column, tasks }: KanbanColumnProps) {
       type: 'Column',
       column,
     },
-    disabled: true, // Columns are not meant to be sorted
   });
 
   const style = {
@@ -70,15 +73,28 @@ export default function KanbanColumn({ column, tasks }: KanbanColumnProps) {
       <div
         {...attributes}
         {...listeners}
+        onClick={() => setIsEditing(true)}
         className="flex items-center justify-between mb-4 p-1"
       >
         <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold font-heading flex items-center gap-2 px-1">
+            {!isEditing && <h2 className="text-lg font-semibold font-heading flex items-center gap-2 px-1">
               {column.title}
               <span className="text-sm font-normal bg-muted text-muted-foreground rounded-full px-2 py-0.5">
                 {tasks.length}
               </span>
-            </h2>
+            </h2>}
+             {isEditing && (
+              <Input
+                value={column.title}
+                onChange={(e) => updateColumn({ ...column, title: e.target.value })}
+                autoFocus
+                onBlur={() => setIsEditing(false)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') setIsEditing(false);
+                }}
+                className="h-8"
+              />
+            )}
         </div>
       </div>
       <ScrollArea className="flex-grow pr-1 h-[calc(100vh-20rem)]">

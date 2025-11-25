@@ -1,3 +1,4 @@
+
 /**
  * Core Philosophy: This ruleset implements a hybrid security model. Data is
  * segregated into two main categories: user-private data (Habits) and
@@ -90,6 +91,12 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
       allow update, delete: if isOwner(get(/databases/$(database)/documents/time_entries/$(timeEntryId)).data.ownerId) || isAdmin();
+    }
+
+    match /columns/{columnId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if isOwner(resource.data.ownerId) || isAdmin();
     }
 
     /**
