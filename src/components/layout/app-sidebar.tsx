@@ -19,8 +19,10 @@ import {
   Repeat,
   BarChart3,
   Settings,
+  PanelLeft,
 } from 'lucide-react';
 import Logo from './logo';
+import { useSidebar } from '@/components/ui/sidebar';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -33,18 +35,25 @@ const navItems = [
 
 export default function AppSidebar() {
   const pathname = usePathname();
+  const { state, toggleSidebar } = useSidebar();
 
   return (
-    <Sidebar>
+    <Sidebar collapsible="icon">
       <SidebarHeader>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="h-10 w-10 text-primary">
-            <Logo />
+        {state === 'expanded' ? (
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" className="h-10 w-10 text-primary">
+              <Logo />
+            </Button>
+            <h1 className="text-lg font-heading font-semibold">Monolith</h1>
+            <div className="grow" />
+            <SidebarTrigger className="hidden md:flex" />
+          </div>
+        ) : (
+          <Button variant="ghost" size="icon" className="h-10 w-10" onClick={toggleSidebar}>
+            <PanelLeft />
           </Button>
-          <h1 className="text-lg font-heading font-semibold">Monolith</h1>
-          <div className="grow" />
-          <SidebarTrigger className="hidden md:flex" />
-        </div>
+        )}
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
