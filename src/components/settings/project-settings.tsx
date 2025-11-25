@@ -20,12 +20,22 @@ import {
 import { Button } from '@/components/ui/button';
 import { projects as initialProjects } from '@/lib/data';
 import type { Project } from '@/lib/types';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Palette } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+
+const availableColors = [
+  'hsl(var(--chart-1))',
+  'hsl(var(--chart-2))',
+  'hsl(var(--chart-3))',
+  'hsl(var(--chart-4))',
+  'hsl(var(--chart-5))',
+];
 
 const getNewProjectTemplate = (): Project => ({
   id: `new-${Date.now()}`,
   name: '',
-  color: '',
+  color: availableColors[0],
   status: 'active',
   hoursPerWeek: 0,
 });
@@ -34,7 +44,7 @@ export default function ProjectSettings() {
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   const [newProject, setNewProject] = useState<Project | null>(null);
 
-  const assignColor = (index: number) => `hsl(var(--chart-${(index % 5) + 1}))`;
+  const assignColor = (index: number) => availableColors[index % availableColors.length];
 
   const handleProjectChange = (
     projectId: string,
@@ -53,7 +63,7 @@ export default function ProjectSettings() {
     value: string | number | 'active' | 'archived' | 'completed'
   ) => {
     if (!newProject) {
-      setNewProject({ ...getNewProjectTemplate(), [field]: value });
+      setNewProject({ ...getNewProjectTemplate(), color: assignColor(projects.length), [field]: value });
     } else {
       setNewProject((prev) => ({ ...prev!, [field]: value }));
     }
@@ -64,7 +74,7 @@ export default function ProjectSettings() {
       const projectToCommit = {
         ...newProject,
         id: `project-${Date.now()}`,
-        color: assignColor(projects.length),
+        color: newProject.color || assignColor(projects.length),
       };
       setProjects([...projects, projectToCommit]);
       setNewProject(null);
@@ -90,6 +100,38 @@ export default function ProjectSettings() {
 
     return (
       <TableRow key={currentProject.id} className="hover:bg-transparent group">
+        <TableCell className="p-2 w-16">
+           <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="w-10 h-10 p-0 border-2"
+                style={{
+                  backgroundColor: isNew && !project ? 'transparent' : currentProject.color,
+                  borderColor: currentProject.color
+                }}
+                disabled={isNew && !project}
+              >
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-2">
+              <div className="flex gap-1">
+                {availableColors.map((color) => (
+                  <Button
+                    key={color}
+                    variant="ghost"
+                    className={cn(
+                      "h-8 w-8 rounded-full p-0",
+                      currentProject.color === color && "ring-2 ring-ring"
+                    )}
+                    style={{ backgroundColor: color }}
+                    onClick={() => changeHandler('color', color)}
+                  />
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </TableCell>
         <TableCell className="p-2">
           <Input
             value={currentProject.name}
@@ -162,6 +204,7 @@ export default function ProjectSettings() {
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
+              <TableHead className="w-16">Color</TableHead>
               <TableHead className="w-[300px]">Name</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Hours per week</TableHead>
