@@ -75,19 +75,19 @@ service cloud.firestore {
     // Collection Rules
     // ----------------------------------------------------------------------
     match /projects/{projectId} {
-      allow list, get: if isSignedIn() && (query.limit <= 100 || request.auth.uid == resource.data.ownerId);
+      allow list, get: if isSignedIn();
       allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
       allow update, delete: if isOwner(resource.data.ownerId) || isAdmin();
     }
     
     match /tasks/{taskId} {
-      allow list, get: if isSignedIn() && query.where.get('ownerId')[2] == request.auth.uid;
+      allow list, get: if isSignedIn();
       allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
       allow update, delete: if isOwner(get(/databases/$(database)/documents/tasks/$(taskId)).data.ownerId) || isAdmin();
     }
     
     match /time_entries/{timeEntryId} {
-      allow list, get: if isSignedIn() && (query.limit <= 100 || request.auth.uid == resource.data.ownerId);
+      allow list, get: if isSignedIn() && query.where.get('ownerId')[2] == request.auth.uid;
       allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
       allow update, delete: if isOwner(get(/databases/$(database)/documents/time_entries/$(timeEntryId)).data.ownerId) || isAdmin();
     }
