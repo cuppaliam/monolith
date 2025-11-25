@@ -2,6 +2,8 @@ export type Project = {
   id: string;
   name: string;
   color: string;
+  status: 'active' | 'archived' | 'completed';
+  hoursPerWeek: number;
 };
 
 export type TaskStatus = 'todo' | 'inprogress' | 'done' | 'backlog';

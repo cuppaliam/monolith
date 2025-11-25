@@ -1,5 +1,6 @@
 import HabitSettings from '@/components/settings/habit-settings';
 import TimerSettings from '@/components/settings/timer-settings';
+import ProjectSettings from '@/components/settings/project-settings';
 import { Separator } from '@/components/ui/separator';
 
 export default function SettingsPage() {
@@ -12,6 +13,8 @@ export default function SettingsPage() {
         </p>
       </header>
 
+      <ProjectSettings />
+      <Separator />
       <TimerSettings />
       <Separator />
       <HabitSettings />
