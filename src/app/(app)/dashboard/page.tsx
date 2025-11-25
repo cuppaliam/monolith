@@ -3,9 +3,9 @@ import UpcomingTasks from '@/components/dashboard/upcoming-tasks';
 import HabitsOverview from '@/components/dashboard/habits-overview';
 import WeeklyOverviewChart from '@/components/dashboard/weekly-overview-chart';
 import ProjectGoals from '@/components/dashboard/project-goals';
-import { tasks, timeEntries } from '@/lib/data';
-import { Clock, ListTodo, CheckCircle } from 'lucide-react';
-import { isToday } from 'date-fns';
+import { tasks, timeEntries, habits, habitLogs } from '@/lib/data';
+import { Clock, ListTodo, CheckCircle, Repeat } from 'lucide-react';
+import { isToday, format } from 'date-fns';
 
 export default function DashboardPage() {
   const totalHoursToday = timeEntries
@@ -14,7 +14,10 @@ export default function DashboardPage() {
 
   const tasksCompletedToday = tasks.filter(task => task.status === 'done' && isToday(new Date(task.createdAt))).length;
   
-  const tasksDueToday = tasks.filter(task => isToday(new Date(task.dueDate)) && task.status !== 'done').length;
+  const todayStr = format(new Date(), 'yyyy-MM-dd');
+  const todaysLogs = habitLogs.filter(log => log.date === todayStr);
+  const habitsCompletedToday = todaysLogs.length;
+  const totalActiveHabits = habits.filter(h => h.active).length;
 
   return (
     <div className="space-y-8">
@@ -35,9 +38,9 @@ export default function DashboardPage() {
           icon={CheckCircle}
         />
         <StatCard 
-          title="Tasks Due Today" 
-          value={tasksDueToday.toString()} 
-          icon={ListTodo} 
+          title="Habits Completed" 
+          value={`${habitsCompletedToday} / ${totalActiveHabits}`}
+          icon={Repeat} 
         />
       </div>
 

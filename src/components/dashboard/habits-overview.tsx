@@ -23,7 +23,7 @@ export default function HabitsOverview() {
       <CardHeader>
         <CardTitle>Today's Habits</CardTitle>
         <CardDescription>
-          {completedToday} of {totalHabits} habits completed.
+          Your daily habit checklist.
         </CardDescription>
       </CardHeader>
       <CardContent>
