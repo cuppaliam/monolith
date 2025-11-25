@@ -18,13 +18,56 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { projects } from '@/lib/data';
-import type { TaskPriority, TaskStatus } from '@/lib/types';
 import { PlusCircle } from 'lucide-react';
+import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
+import { collection, doc, query, where } from 'firebase/firestore';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import type { Project, Task, TaskPriority, TaskStatus } from '@/lib/types';
+import { useState } from 'react';
+import { formatISO } from 'date-fns';
 
 export function TaskActions() {
+  const { firestore } = useFirebase();
+  const { user } = useUser();
+  const [isOpen, setIsOpen] = useState(false);
+
+  const projectsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return query(collection(firestore, 'projects'), where('ownerId', '==', user.uid));
+  }, [firestore, user]);
+  const { data: projects } = useCollection<Project>(projectsQuery);
+
+  const handleCreateTask = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!user || !firestore) return;
+
+    const formData = new FormData(event.currentTarget);
+    const title = formData.get('title') as string;
+    const projectId = formData.get('project') as string;
+    const status = formData.get('status') as TaskStatus;
+    const priority = formData.get('priority') as TaskPriority;
+    
+    if (!title || !projectId) return;
+
+    const newTask: Omit<Task, 'id'> = {
+      title,
+      projectId,
+      status,
+      priority,
+      dueDate: formatISO(new Date()),
+      createdAt: new Date().toISOString(),
+      ownerId: user.uid,
+    };
+    
+    const tasksCollection = collection(firestore, 'tasks');
+    addDocumentNonBlocking(tasksCollection, newTask);
+    
+    setIsOpen(false);
+  };
+
+
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button>
           <PlusCircle className="mr-2 h-4 w-4" />
@@ -38,64 +81,66 @@ export function TaskActions() {
             Add a new task to your board. Click save when you're done.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="title" className="text-right">
-              Title
-            </Label>
-            <Input id="title" defaultValue="Build new feature" className="col-span-3" />
+        <form onSubmit={handleCreateTask}>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="title" className="text-right">
+                Title
+              </Label>
+              <Input id="title" name="title" placeholder="Build new feature" className="col-span-3" />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="project" className="text-right">
+                Project
+              </Label>
+              <Select name="project">
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select a project" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(projects ?? []).map((project) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="status" className="text-right">
+                Status
+              </Label>
+              <Select name="status" defaultValue="todo">
+                <SelectTrigger className="col-span-3">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="backlog">Backlog</SelectItem>
+                  <SelectItem value="todo">To Do</SelectItem>
+                  <SelectItem value="inprogress">In Progress</SelectItem>
+                  <SelectItem value="done">Done</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="priority" className="text-right">
+                Priority
+              </Label>
+              <Select name="priority" defaultValue="medium">
+                <SelectTrigger className="col-span-3">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="urgent">Urgent</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="project" className="text-right">
-              Project
-            </Label>
-            <Select>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select a project" />
-              </SelectTrigger>
-              <SelectContent>
-                {projects.map((project) => (
-                  <SelectItem key={project.id} value={project.id}>
-                    {project.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="status" className="text-right">
-              Status
-            </Label>
-            <Select defaultValue="todo">
-              <SelectTrigger className="col-span-3">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="backlog">Backlog</SelectItem>
-                <SelectItem value="todo">To Do</SelectItem>
-                <SelectItem value="inprogress">In Progress</SelectItem>
-                <SelectItem value="done">Done</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="priority" className="text-right">
-              Priority
-            </Label>
-            <Select defaultValue="medium">
-              <SelectTrigger className="col-span-3">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="low">Low</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
-                <SelectItem value="high">High</SelectItem>
-                <SelectItem value="urgent">Urgent</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        <Button type="submit">Save Task</Button>
+          <Button type="submit">Save Task</Button>
+        </form>
       </DialogContent>
     </Dialog>
   );

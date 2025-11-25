@@ -1,10 +1,22 @@
+'use client';
 import WeeklyOverviewChart from "@/components/dashboard/weekly-overview-chart";
 import HabitCompletionChart from "@/components/reports/habit-completion-chart";
 import TimeLogTable from "@/components/time/time-log-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { timeEntries } from "@/lib/data";
+import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
+import { TimeEntry } from '@/lib/types';
+import TimePerProjectChart from "@/components/reports/time-per-project-chart";
 
 export default function ReportsPage() {
+  const { firestore } = useFirebase();
+  const { user } = useUser();
+  const timeEntriesQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return query(collection(firestore, 'time_entries'), where('ownerId', '==', user.uid));
+  }, [firestore, user]);
+  const { data: timeEntries } = useCollection<TimeEntry>(timeEntriesQuery);
+
   return (
     <div className="space-y-8">
       <header>
@@ -31,7 +43,9 @@ export default function ReportsPage() {
             <CardTitle>Time per Project</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">Chart disabled, view on dashboard.</p>
+            <div className="h-[300px]">
+              <TimePerProjectChart />
+            </div>
           </CardContent>
         </Card>
         
@@ -48,7 +62,7 @@ export default function ReportsPage() {
       </div>
 
       <div>
-        <TimeLogTable entries={timeEntries} />
+        <TimeLogTable entries={timeEntries ?? []} />
       </div>
     </div>
   );

@@ -1,25 +1,26 @@
-
 'use client';
 
-import { habitLogs } from '@/lib/data';
+import { useMemo } from 'react';
+import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
 import {
   startOfMonth,
   endOfMonth,
   eachDayOfInterval,
   format,
   getDay,
-  startOfWeek,
-  addDays,
 } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { useMemo } from 'react';
+import type { HabitLog } from '@/lib/types';
 
 interface HabitCalendarProps {
   habitId: string;
 }
 
 export default function HabitCalendar({ habitId }: HabitCalendarProps) {
+  const { firestore } = useFirebase();
+  const { user } = useUser();
   const today = new Date();
   const firstDayOfMonth = startOfMonth(today);
   const lastDayOfMonth = endOfMonth(today);
@@ -29,23 +30,21 @@ export default function HabitCalendar({ habitId }: HabitCalendarProps) {
     end: lastDayOfMonth,
   });
 
-  const startingDayIndex = getDay(firstDayOfMonth); // 0 for Sunday, 1 for Monday etc.
+  const startingDayIndex = getDay(firstDayOfMonth);
+
+  const habitLogsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return collection(firestore, `users/${user.uid}/habit_logs`);
+  }, [firestore, user]);
+  const { data: habitLogs } = useCollection<HabitLog>(habitLogsQuery);
 
   const habitLogsForHabit = useMemo(() => {
     return new Set(
-      habitLogs
+      (habitLogs ?? [])
         .filter((log) => log.habitId === habitId)
         .map((log) => log.date)
     );
-  }, [habitId]);
-  
-  const getIntensity = (count: number) => {
-    if (count === 0) return 'bg-muted/50';
-    if (count <= 1) return 'bg-primary/20';
-    if (count <= 2) return 'bg-primary/40';
-    if (count <= 3) return 'bg-primary/70';
-    return 'bg-primary';
-  };
+  }, [habitId, habitLogs]);
 
   return (
     <div className="grid grid-cols-7 gap-1.5" style={{ gridAutoRows: '1fr' }}>

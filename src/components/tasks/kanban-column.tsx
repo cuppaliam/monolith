@@ -1,29 +1,34 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { SortableContext, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-
+import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
 import type { Column, Task, Project } from '@/lib/types';
 import TaskCard from './task-card';
-import { projects } from '@/lib/data';
-import { Input } from '../ui/input';
 import { ScrollArea } from '../ui/scroll-area';
 
 interface KanbanColumnProps {
   column: Column;
   tasks: Task[];
-  updateColumn: (id: string, title: string) => void;
 }
 
-export default function KanbanColumn({ column, tasks, updateColumn }: KanbanColumnProps) {
-  const [editMode, setEditMode] = useState(false);
+export default function KanbanColumn({ column, tasks }: KanbanColumnProps) {
+  const { firestore } = useFirebase();
+  const { user } = useUser();
   
   const tasksIds = useMemo(() => {
     return tasks.map((task) => task.id);
   }, [tasks]);
   
-  const getProject = (projectId: string): Project | undefined => projects.find(p => p.id === projectId);
+  const projectsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return query(collection(firestore, 'projects'), where('ownerId', '==', user.uid));
+  }, [firestore, user]);
+  const { data: projects } = useCollection<Project>(projectsQuery);
+
+  const getProject = (projectId: string): Project | undefined => (projects ?? []).find(p => p.id === projectId);
 
   const {
     setNodeRef,
@@ -38,7 +43,7 @@ export default function KanbanColumn({ column, tasks, updateColumn }: KanbanColu
       type: 'Column',
       column,
     },
-    disabled: editMode,
+    disabled: true, // Columns are not meant to be sorted
   });
 
   const style = {
@@ -65,34 +70,19 @@ export default function KanbanColumn({ column, tasks, updateColumn }: KanbanColu
       <div
         {...attributes}
         {...listeners}
-        onClick={() => setEditMode(true)}
-        className="flex items-center justify-between mb-4 cursor-grab p-1"
+        className="flex items-center justify-between mb-4 p-1"
       >
         <div className="flex items-center gap-2">
-          {editMode ? (
-            <Input
-              value={column.title}
-              onChange={(e) => updateColumn(column.id, e.target.value)}
-              autoFocus
-              onBlur={() => setEditMode(false)}
-              onKeyDown={(e) => {
-                if (e.key !== 'Enter') return;
-                setEditMode(false);
-              }}
-              className="font-semibold font-heading bg-transparent border-primary h-8"
-            />
-          ) : (
             <h2 className="text-lg font-semibold font-heading flex items-center gap-2 px-1">
               {column.title}
               <span className="text-sm font-normal bg-muted text-muted-foreground rounded-full px-2 py-0.5">
                 {tasks.length}
               </span>
             </h2>
-          )}
         </div>
       </div>
-      <ScrollArea className="flex-grow pr-1">
-        <div className="space-y-4 h-full">
+      <ScrollArea className="flex-grow pr-1 h-[calc(100vh-20rem)]">
+        <div className="space-y-4">
           <SortableContext items={tasksIds}>
             {tasks.map((task) => (
               <TaskCard key={task.id} task={task} project={getProject(task.projectId)} />

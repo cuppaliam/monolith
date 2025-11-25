@@ -1,9 +1,12 @@
 'use client';
 
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
-import { timeEntries, projects } from '@/lib/data';
+import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import type { ChartConfig } from '@/components/ui/chart';
+import type { Project, TimeEntry } from '@/lib/types';
+import { useMemo } from 'react';
 
 const chartConfig = {
   hours: {
@@ -12,17 +15,35 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export default function TimePerProjectChart() {
-  const data = projects.map(project => {
-    const totalDuration = timeEntries
-      .filter(entry => entry.projectId === project.id)
-      .reduce((acc, entry) => acc + entry.duration, 0);
+  const { firestore } = useFirebase();
+  const { user } = useUser();
 
-    return {
-      name: project.name,
-      hours: totalDuration / 3600,
-      fill: project.color,
-    };
-  });
+  const projectsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return query(collection(firestore, 'projects'), where('ownerId', '==', user.uid));
+  }, [firestore, user]);
+  const { data: projects } = useCollection<Project>(projectsQuery);
+
+  const timeEntriesQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return query(collection(firestore, 'time_entries'), where('ownerId', '==', user.uid));
+  }, [firestore, user]);
+  const { data: timeEntries } = useCollection<TimeEntry>(timeEntriesQuery);
+
+  const data = useMemo(() => {
+    if (!projects || !timeEntries) return [];
+    return projects.map(project => {
+      const totalDuration = timeEntries
+        .filter(entry => entry.projectId === project.id)
+        .reduce((acc, entry) => acc + entry.duration, 0);
+
+      return {
+        name: project.name,
+        hours: totalDuration / 3600,
+        fill: project.color,
+      };
+    });
+  }, [projects, timeEntries]);
 
   return (
     <ChartContainer config={chartConfig} className="w-full h-full">

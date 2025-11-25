@@ -1,24 +1,27 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { habits, habitLogs as initialHabitLogs } from '@/lib/data';
-import type { HabitLog } from '@/lib/types';
-import { format, addDays, subDays, isToday, isSameDay } from 'date-fns';
+import { format, addDays, subDays, isToday } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
+import { setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import type { Habit, HabitLog } from '@/lib/types';
 
 const DailyHabitCard = ({
   date,
+  habits,
   habitLogs,
   onCheckChange,
   isCenter,
 }: {
   date: Date;
+  habits: Habit[];
   habitLogs: HabitLog[];
   onCheckChange: (habitId: string, date: Date, completed: boolean) => void;
   isCenter: boolean;
@@ -72,8 +75,22 @@ const DailyHabitCard = ({
 
 export default function DailyHabitView() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [habitLogs, setHabitLogs] = useState<HabitLog[]>(initialHabitLogs);
   const [direction, setDirection] = useState(0);
+
+  const { firestore } = useFirebase();
+  const { user } = useUser();
+
+  const habitsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return collection(firestore, `users/${user.uid}/habits`);
+  }, [firestore, user]);
+  const { data: habits } = useCollection<Habit>(habitsQuery);
+  
+  const habitLogsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return collection(firestore, `users/${user.uid}/habit_logs`);
+  }, [firestore, user]);
+  const { data: habitLogs } = useCollection<HabitLog>(habitLogsQuery);
 
   const dates = useMemo(() => {
     return {
@@ -89,14 +106,22 @@ export default function DailyHabitView() {
   };
   
   const handleCheckChange = (habitId: string, date: Date, completed: boolean) => {
+    if (!user || !firestore) return;
+    
     const dateStr = format(date, 'yyyy-MM-dd');
-    setHabitLogs(prevLogs => {
-      if (completed) {
-        return [...prevLogs, { id: `log-${Date.now()}`, habitId, date: dateStr, completed: true }];
-      } else {
-        return prevLogs.filter(log => !(log.habitId === habitId && log.date === dateStr));
-      }
-    });
+    const logId = `log-${habitId}-${dateStr}`;
+    const logRef = doc(firestore, `users/${user.uid}/habit_logs`, logId);
+
+    if (completed) {
+      setDocumentNonBlocking(logRef, {
+        id: logId,
+        habitId,
+        date: dateStr,
+        completed: true,
+      }, { merge: true });
+    } else {
+      deleteDocumentNonBlocking(logRef);
+    }
   };
 
   const variants = {
@@ -121,7 +146,6 @@ export default function DailyHabitView() {
 
   return (
     <div className="relative flex items-center justify-center h-[450px] overflow-hidden">
-        {/* Prev and Next Buttons */}
         <Button variant="ghost" size="icon" className="absolute left-0 z-20 h-16 w-16" onClick={() => changeDate(-1)}>
             <ChevronLeft className="h-8 w-8" />
         </Button>
@@ -129,15 +153,13 @@ export default function DailyHabitView() {
             <ChevronRight className="h-8 w-8" />
         </Button>
       
-        {/* Side Cards */}
         <div className="absolute left-0 w-full h-full flex justify-center items-center" onClick={() => changeDate(-1)}>
-             <DailyHabitCard date={dates.prev} habitLogs={habitLogs} onCheckChange={handleCheckChange} isCenter={false} />
+             <DailyHabitCard date={dates.prev} habits={habits ?? []} habitLogs={habitLogs ?? []} onCheckChange={handleCheckChange} isCenter={false} />
         </div>
         <div className="absolute right-0 w-full h-full flex justify-center items-center" onClick={() => changeDate(1)}>
-             <DailyHabitCard date={dates.next} habitLogs={habitLogs} onCheckChange={handleCheckChange} isCenter={false} />
+             <DailyHabitCard date={dates.next} habits={habits ?? []} habitLogs={habitLogs ?? []} onCheckChange={handleCheckChange} isCenter={false} />
         </div>
 
-        {/* Center Card */}
         <AnimatePresence initial={false} custom={direction}>
             <motion.div
             key={currentDate.toString()}
@@ -151,7 +173,8 @@ export default function DailyHabitView() {
             >
                 <DailyHabitCard
                     date={dates.current}
-                    habitLogs={habitLogs}
+                    habits={habits ?? []}
+                    habitLogs={habitLogs ?? []}
                     onCheckChange={handleCheckChange}
                     isCenter={true}
                 />

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -6,7 +5,6 @@ import { HabitActions } from '@/components/habits/habit-actions';
 import DailyHabitView from '@/components/habits/daily-habit-view';
 import HabitCalendar from '@/components/habits/habit-calendar';
 import HabitStreaks from '@/components/habits/habit-streaks';
-import { habits } from '@/lib/data';
 import {
   Select,
   SelectContent,
@@ -15,9 +13,28 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
+import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import type { Habit } from '@/lib/types';
 
 export default function HabitsPage() {
-  const [selectedHabitId, setSelectedHabitId] = useState(habits[0]?.id || '');
+  const { firestore } = useFirebase();
+  const { user } = useUser();
+
+  const habitsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return collection(firestore, `users/${user.uid}/habits`);
+  }, [firestore, user]);
+  const { data: habits } = useCollection<Habit>(habitsQuery);
+  const [selectedHabitId, setSelectedHabitId] = useState('');
+
+  if (!habits) {
+    return null; // Or a loading indicator
+  }
+  
+  if(habits.length > 0 && !selectedHabitId) {
+    setSelectedHabitId(habits[0].id)
+  }
 
   return (
     <div className="space-y-8">

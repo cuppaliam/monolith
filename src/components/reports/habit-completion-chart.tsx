@@ -1,10 +1,13 @@
 'use client';
 
 import { Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
-import { habits, habitLogs } from '@/lib/data';
+import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
 import { subDays, format } from 'date-fns';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import type { ChartConfig } from '@/components/ui/chart';
+import type { Habit, HabitLog } from '@/lib/types';
+import { useMemo } from 'react';
 
 const chartConfig = {
   'Completion Rate': {
@@ -15,17 +18,36 @@ const chartConfig = {
 
 
 export default function HabitCompletionChart() {
-  const data = Array.from({ length: 7 }).map((_, i) => {
-    const date = subDays(new Date(), 6 - i);
-    const dateStr = format(date, 'yyyy-MM-dd');
-    const completedCount = habitLogs.filter(log => log.date === dateStr).length;
-    const completionRate = (completedCount / habits.length) * 100;
-    
-    return {
-      date: format(date, 'MMM d'),
-      'Completion Rate': parseFloat(completionRate.toFixed(0)),
-    };
-  });
+  const { firestore } = useFirebase();
+  const { user } = useUser();
+
+  const habitsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return collection(firestore, `users/${user.uid}/habits`);
+  }, [firestore, user]);
+  const { data: habits } = useCollection<Habit>(habitsQuery);
+  
+  const habitLogsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return collection(firestore, `users/${user.uid}/habit_logs`);
+  }, [firestore, user]);
+  const { data: habitLogs } = useCollection<HabitLog>(habitLogsQuery);
+
+  const data = useMemo(() => {
+    if (!habits || !habitLogs) return [];
+    return Array.from({ length: 7 }).map((_, i) => {
+      const date = subDays(new Date(), 6 - i);
+      const dateStr = format(date, 'yyyy-MM-dd');
+      const completedCount = habitLogs.filter(log => log.date === dateStr).length;
+      const totalHabits = habits.filter(h => h.active).length;
+      const completionRate = totalHabits > 0 ? (completedCount / totalHabits) * 100 : 0;
+      
+      return {
+        date: format(date, 'MMM d'),
+        'Completion Rate': parseFloat(completionRate.toFixed(0)),
+      };
+    });
+  }, [habits, habitLogs]);
 
   return (
     <ChartContainer config={chartConfig} className="w-full h-full">

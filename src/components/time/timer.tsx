@@ -9,10 +9,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { projects } from '@/lib/data';
 import { Play, Pause, RotateCcw, Timer, Gauge, Clock } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';
+import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
+import { collection, query, where, doc } from 'firebase/firestore';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import type { Project } from '@/lib/types';
 
 type TimerMode = 'stopwatch' | 'pomodoro' | 'timer';
 
@@ -43,14 +45,22 @@ const pomodoroDurations = {
 };
 
 export default function TimerComponent() {
+  const { firestore } = useFirebase();
+  const { user } = useUser();
   const [mode, setMode] = useState<TimerMode>('stopwatch');
   const [isRunning, setIsRunning] = useState(false);
   const [time, setTime] = useState(0);
+  const [startTime, setStartTime] = useState<Date | null>(null);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
 
-  // Pomodoro specific state
   const [pomodoroState, setPomodoroState] = useState<'work' | 'shortBreak' | 'longBreak'>('work');
   const [pomodoroCycles, setPomodoroCycles] = useState(0);
+
+  const projectsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return query(collection(firestore, 'projects'), where('ownerId', '==', user.uid));
+  }, [firestore, user]);
+  const { data: projects } = useCollection<Project>(projectsQuery);
 
   const getInitialTime = useCallback(() => {
     switch (mode) {
@@ -59,7 +69,7 @@ export default function TimerComponent() {
         setPomodoroCycles(0);
         return pomodoroDurations.work;
       case 'timer':
-        return 15 * 60; // Default 15 minutes for timer
+        return 15 * 60;
       case 'stopwatch':
       default:
         return 0;
@@ -70,8 +80,28 @@ export default function TimerComponent() {
     setIsRunning(false);
     setTime(getInitialTime());
   }, [mode, getInitialTime]);
+
+  const saveTimeEntry = useCallback(() => {
+    if (!firestore || !user || !selectedProject || !startTime) return;
+    if (time <= 0 && mode === 'stopwatch') return;
+
+    const endTime = new Date();
+    const duration = mode === 'stopwatch' 
+        ? Math.round((endTime.getTime() - startTime.getTime()) / 1000) 
+        : pomodoroDurations.work;
+
+    if (duration > 0) {
+        const timeEntriesCollection = collection(firestore, 'time_entries');
+        addDocumentNonBlocking(timeEntriesCollection, {
+            projectId: selectedProject,
+            startTime: startTime.toISOString(),
+            endTime: endTime.toISOString(),
+            duration: duration,
+            ownerId: user.uid,
+        });
+    }
+  }, [firestore, user, selectedProject, time, startTime, mode]);
   
-  // Timer logic
   useEffect(() => {
     let interval: NodeJS.Timeout | undefined;
 
@@ -81,18 +111,13 @@ export default function TimerComponent() {
           if (mode === 'stopwatch') {
             return prevTime + 1;
           }
-          // For timer and pomodoro
           if (prevTime > 0) {
             return prevTime - 1;
           }
           
-          // Timer finished
           if (mode === 'pomodoro') {
-            // Handle Pomodoro state transition
             if (pomodoroState === 'work') {
-              // Save work session entry
-              console.log(`Pomodoro work session for project ${selectedProject}: ${pomodoroDurations.work} seconds`);
-              
+              saveTimeEntry();
               const newCycles = pomodoroCycles + 1;
               setPomodoroCycles(newCycles);
               if (newCycles % 4 === 0) {
@@ -102,11 +127,12 @@ export default function TimerComponent() {
                 setPomodoroState('shortBreak');
                 setTime(pomodoroDurations.shortBreak);
               }
-            } else { // break finished
+            } else { 
                 setPomodoroState('work');
                 setTime(pomodoroDurations.work);
             }
-            setIsRunning(true); // Auto-start next session
+            setIsRunning(true);
+            setStartTime(new Date());
           } else {
             setIsRunning(false);
           }
@@ -117,26 +143,31 @@ export default function TimerComponent() {
     }
 
     return () => clearInterval(interval);
-  }, [isRunning, mode, pomodoroState, pomodoroCycles, selectedProject]);
+  }, [isRunning, mode, pomodoroState, pomodoroCycles, selectedProject, saveTimeEntry]);
 
 
   const handlePrimaryClick = () => {
     if (selectedProject || mode !== 'stopwatch') {
+        if (!isRunning) {
+            setStartTime(new Date());
+        }
       setIsRunning((prev) => !prev);
     }
   };
-
+  
   const handleStop = () => {
     setIsRunning(false);
-    if (mode === 'stopwatch' && time > 0) {
-        console.log(`Time entry for project ${selectedProject}: ${time} seconds`);
+    if ((mode === 'stopwatch' || (mode === 'pomodoro' && pomodoroState === 'work')) && time > 0) {
+      saveTimeEntry();
     }
     setTime(getInitialTime());
+    setStartTime(null);
   };
   
   const handleReset = () => {
     setIsRunning(false);
     setTime(getInitialTime());
+    setStartTime(null);
   };
 
   const cycleMode = () => {
@@ -167,7 +198,7 @@ export default function TimerComponent() {
             <SelectValue placeholder="project" />
           </SelectTrigger>
           <SelectContent>
-            {projects.map((project) => (
+            {(projects ?? []).map((project) => (
               <SelectItem key={project.id} value={project.id}>
                 <div className="flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: project.color }} />

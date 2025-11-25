@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   DndContext,
   DragEndEvent,
@@ -12,22 +12,42 @@ import {
 } from '@dnd-kit/core';
 import { SortableContext, arrayMove } from '@dnd-kit/sortable';
 import { Plus } from 'lucide-react';
-
-import { tasks as initialTasks, columns as initialColumns } from '@/lib/data';
+import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
+import { collection, doc, query, where } from 'firebase/firestore';
+import { setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import type { Column, Task } from '@/lib/types';
-
 import KanbanColumn from './kanban-column';
 import { Button } from '../ui/button';
 
 function generateId() {
-  return Math.floor(Math.random() * 10001);
+  return `task-${Date.now()}`;
 }
 
 export default function KanbanBoard() {
-  const [columns, setColumns] = useState<Column[]>(initialColumns);
+  const { firestore } = useFirebase();
+  const { user } = useUser();
+
+  const columns: Column[] = [
+    { id: 'backlog', title: 'Backlog' },
+    { id: 'todo', title: 'To Do' },
+    { id: 'inprogress', title: 'In Progress' },
+    { id: 'done', title: 'Done' },
+  ];
   const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
 
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const tasksQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return query(collection(firestore, 'tasks'), where('ownerId', '==', user.uid));
+  }, [firestore, user]);
+  const { data: initialTasks } = useCollection<Task>(tasksQuery);
+
+  const [tasks, setTasks] = useState<Task[]>([]);
+
+  useEffect(() => {
+    if (initialTasks) {
+      setTasks(initialTasks);
+    }
+  }, [initialTasks]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -36,23 +56,12 @@ export default function KanbanBoard() {
       },
     })
   );
-
-  function createNewColumn(atIndex: number) {
-    const newColumn: Column = {
-      id: `col-${generateId()}`,
-      title: `New Section`,
-    };
-    const newColumns = [...columns];
-    newColumns.splice(atIndex, 0, newColumn);
-    setColumns(newColumns);
-  }
-
-  function updateColumn(id: string, title: string) {
-    const newColumns = columns.map((col) => {
-      if (col.id !== id) return col;
-      return { ...col, title };
-    });
-    setColumns(newColumns);
+  
+  function updateTask(updatedTask: Task) {
+    if (!firestore || !user) return;
+    const taskRef = doc(firestore, 'tasks', updatedTask.id.toString());
+    setDocumentNonBlocking(taskRef, updatedTask, { merge: true });
+    setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t));
   }
 
   function onDragStart(event: DragStartEvent) {
@@ -73,15 +82,15 @@ export default function KanbanBoard() {
 
     if (!isActiveATask) return;
 
-    // Dropping a Task over another Task
     if (isActiveATask && isOverATask) {
       setTasks((tasks) => {
         const activeIndex = tasks.findIndex((t) => t.id === activeId);
         const overIndex = tasks.findIndex((t) => t.id === overId);
         
         if (tasks[activeIndex].status !== tasks[overIndex].status) {
-          tasks[activeIndex].status = tasks[overIndex].status;
-          return arrayMove(tasks, activeIndex, overIndex);
+          const updatedTask = { ...tasks[activeIndex], status: tasks[overIndex].status };
+          updateTask(updatedTask);
+          return arrayMove(tasks, activeIndex, overIndex - 1);
         }
         
         return arrayMove(tasks, activeIndex, overIndex);
@@ -90,12 +99,12 @@ export default function KanbanBoard() {
     
     const isOverAColumn = over.data.current?.type === 'Column';
 
-    // Dropping a Task over a column
     if (isActiveATask && isOverAColumn) {
         setTasks((tasks) => {
             const activeIndex = tasks.findIndex((t) => t.id === activeId);
             if (tasks[activeIndex].status !== overId) {
-                tasks[activeIndex].status = overId;
+                const updatedTask = { ...tasks[activeIndex], status: overId };
+                updateTask(updatedTask);
                 return arrayMove(tasks, activeIndex, activeIndex);
             }
             return tasks;
@@ -104,53 +113,25 @@ export default function KanbanBoard() {
   }
 
   function onDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
-    if (!over) return;
-
-    const activeId = active.id;
-    const overId = over.id;
-
-    if (activeId === overId) return;
-    
-    const isActiveAColumn = active.data.current?.type === 'Column';
-    if (isActiveAColumn) {
-       setColumns((columns) => {
-        const activeColumnIndex = columns.findIndex((col) => col.id === activeId);
-        const overColumnIndex = columns.findIndex((col) => col.id === overId);
-        return arrayMove(columns, activeColumnIndex, overColumnIndex);
-      });
-      return;
-    }
+    // No specific onDragEnd logic needed for columns as they are static.
   }
 
   return (
-    <div className="flex gap-1 items-start overflow-x-auto pb-4 -mx-8 px-8">
+    <div className="flex gap-4 items-start overflow-x-auto pb-4 -mx-8 px-8">
       <DndContext
         sensors={sensors}
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
         onDragOver={onDragOver}
       >
-        <div className="flex">
+        <div className="flex gap-4">
           <SortableContext items={columnsId}>
-            {columns.map((col, index) => (
-              <div key={col.id} className="flex items-start">
-                <KanbanColumn
-                  column={col}
-                  tasks={tasks.filter((task) => task.status === col.id)}
-                  updateColumn={updateColumn}
-                />
-                <div className="relative group h-full">
-                   <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-transparent group-hover:bg-accent transition-colors duration-300"></div>
-                  <button
-                    onClick={() => createNewColumn(index + 1)}
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-8 flex items-center justify-center bg-transparent text-accent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                  >
-                    <Plus size={16} className="bg-accent text-accent-foreground rounded-full p-0.5" />
-                  </button>
-                  <div className="w-4 h-full" />
-                </div>
-              </div>
+            {columns.map((col) => (
+              <KanbanColumn
+                key={col.id}
+                column={col}
+                tasks={tasks.filter((task) => task.status === col.id)}
+              />
             ))}
           </SortableContext>
         </div>

@@ -1,3 +1,5 @@
+'use client';
+
 import {
   Table,
   TableBody,
@@ -7,9 +9,11 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { projects } from '@/lib/data';
-import type { TimeEntry } from '@/lib/types';
-import { format, parseISO } from 'date-fns';
+import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
+import type { TimeEntry, Project } from '@/lib/types';
+import { format } from 'date-fns';
+import { useMemo } from 'react';
 
 interface TimeLogTableProps {
   entries: TimeEntry[];
@@ -22,10 +26,21 @@ function formatDuration(seconds: number) {
 }
 
 export default function TimeLogTable({ entries }: TimeLogTableProps) {
-  const getProject = (projectId: string) => projects.find(p => p.id === projectId);
+  const { firestore } = useFirebase();
+  const { user } = useUser();
   
-  const sortedEntries = [...entries].sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
+  const projectsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return query(collection(firestore, 'projects'), where('ownerId', '==', user.uid));
+  }, [firestore, user]);
+  const { data: projects } = useCollection<Project>(projectsQuery);
 
+  const getProject = (projectId: string) => (projects ?? []).find(p => p.id === projectId);
+  
+  const sortedEntries = useMemo(() => 
+    [...(entries ?? [])].sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime()),
+    [entries]
+  );
 
   return (
     <Card>
@@ -53,7 +68,7 @@ export default function TimeLogTable({ entries }: TimeLogTableProps) {
                     </div>
                   </TableCell>
                   <TableCell className="text-right font-medium">{formatDuration(entry.duration)}</TableCell>
-                  <TableCell className="text-right text-muted-foreground">{format(parseISO(entry.startTime), 'MMM d, yyyy')}</TableCell>
+                  <TableCell className="text-right text-muted-foreground">{format(new Date(entry.startTime), 'MMM d, yyyy')}</TableCell>
                 </TableRow>
               )
             })}
