@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -105,7 +106,7 @@ export default function ProjectSettings() {
 
     return (
       <TableRow key={currentProject.id} className="hover:bg-transparent group">
-        <TableCell className="p-2 w-16">
+        <TableCell className="p-2 w-16 flex justify-center">
            <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -209,7 +210,7 @@ export default function ProjectSettings() {
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="w-16">Color</TableHead>
+              <TableHead className="w-16 text-center">Color</TableHead>
               <TableHead className="w-[300px]">Name</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Hours per week</TableHead>
