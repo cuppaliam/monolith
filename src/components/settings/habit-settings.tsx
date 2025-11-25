@@ -2,10 +2,7 @@
 
 import { useState } from 'react';
 import {
-  Card,
-  CardContent,
   CardDescription,
-  CardHeader,
   CardTitle,
 } from '@/components/ui/card';
 import {
@@ -35,7 +32,7 @@ export default function HabitSettings() {
   const handleHabitChange = (
     habitId: string,
     field: keyof Habit,
-    value: string | number | boolean
+    value: string | number | boolean | 'build' | 'stop'
   ) => {
     setHabits((prevHabits) =>
       prevHabits.map((habit) =>
@@ -45,37 +42,37 @@ export default function HabitSettings() {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Habit Settings</CardTitle>
-        <CardDescription>
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-2xl font-semibold leading-none tracking-tight">Habit Settings</h2>
+        <p className="text-sm text-muted-foreground">
           Customize the habits you want to track.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+        </p>
+      </div>
+      <div className="border rounded-lg">
         <Table>
           <TableHeader>
-            <TableRow>
+            <TableRow className="hover:bg-transparent">
               <TableHead className="w-[250px]">Name</TableHead>
               <TableHead>Active</TableHead>
               <TableHead>Period</TableHead>
               <TableHead>Frequency</TableHead>
-              <TableHead>Goal (Build/Stop)</TableHead>
+              <TableHead>Goal</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {habits.map((habit) => (
-              <TableRow key={habit.id}>
-                <TableCell>
+              <TableRow key={habit.id} className="hover:bg-transparent">
+                <TableCell className="p-2">
                   <Input
                     value={habit.name}
                     onChange={(e) =>
                       handleHabitChange(habit.id, 'name', e.target.value)
                     }
-                    className="w-full"
+                    className="w-full bg-transparent border-none focus-visible:ring-1"
                   />
                 </TableCell>
-                <TableCell>
+                <TableCell className="p-2">
                   <Checkbox
                     checked={habit.active}
                     onCheckedChange={(checked) =>
@@ -83,14 +80,14 @@ export default function HabitSettings() {
                     }
                   />
                 </TableCell>
-                <TableCell>
+                <TableCell className="p-2">
                   <Select
                     value={habit.period}
                     onValueChange={(value) =>
                       handleHabitChange(habit.id, 'period', value)
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-transparent border-none focus:ring-1 w-auto">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -99,7 +96,7 @@ export default function HabitSettings() {
                     </SelectContent>
                   </Select>
                 </TableCell>
-                <TableCell>
+                <TableCell className="p-2">
                   <Input
                     type="number"
                     value={habit.frequency}
@@ -110,36 +107,34 @@ export default function HabitSettings() {
                         parseInt(e.target.value, 10) || 1
                       )
                     }
-                    className="w-20"
+                    className="w-20 bg-transparent border-none focus-visible:ring-1"
                     min="1"
                   />
                 </TableCell>
-                <TableCell>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={habit.goal === 'stop'}
-                      onCheckedChange={(checked) =>
-                        handleHabitChange(
-                          habit.id,
-                          'goal',
-                          checked ? 'stop' : 'build'
-                        )
-                      }
-                      id={`goal-${habit.id}`}
-                    />
-                    <label htmlFor={`goal-${habit.id}`} className="text-sm">
-                      {habit.goal === 'build' ? 'Build' : 'Stop'}
-                    </label>
-                  </div>
+                <TableCell className="p-2">
+                   <Select
+                    value={habit.goal}
+                    onValueChange={(value: 'build' | 'stop') =>
+                      handleHabitChange(habit.id, 'goal', value)
+                    }
+                  >
+                    <SelectTrigger className="bg-transparent border-none focus:ring-1 w-auto">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="build">Build</SelectItem>
+                      <SelectItem value="stop">Stop</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
+      </div>
         <div className="flex justify-end mt-6">
           <Button>Save Changes</Button>
         </div>
-      </CardContent>
-    </Card>
+    </div>
   );
 }

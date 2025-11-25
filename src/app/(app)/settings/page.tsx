@@ -1,9 +1,10 @@
 import HabitSettings from '@/components/settings/habit-settings';
 import TimerSettings from '@/components/settings/timer-settings';
+import { Separator } from '@/components/ui/separator';
 
 export default function SettingsPage() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 max-w-4xl mx-auto">
       <header>
         <h1 className="text-3xl font-heading font-bold">Settings</h1>
         <p className="text-muted-foreground">
@@ -12,6 +13,7 @@ export default function SettingsPage() {
       </header>
 
       <TimerSettings />
+      <Separator />
       <HabitSettings />
     </div>
   );

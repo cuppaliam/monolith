@@ -19,15 +19,15 @@ export default function TimerSettings() {
   const [pomodoroLongBreak, setPomodoroLongBreak] = useState(15);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Timer Settings</CardTitle>
-        <CardDescription>
+    <div>
+      <div>
+         <h2 className="text-2xl font-semibold leading-none tracking-tight">Timer Settings</h2>
+        <p className="text-sm text-muted-foreground">
           Customize the default durations for the different timer modes (in
           minutes).
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
+        </p>
+      </div>
+      <div className="space-y-6 mt-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <Label htmlFor="timer-duration">Timer Duration</Label>
@@ -73,7 +73,7 @@ export default function TimerSettings() {
         <div className="flex justify-end">
           <Button>Save Changes</Button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
