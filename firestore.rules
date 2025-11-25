@@ -96,7 +96,7 @@ service cloud.firestore {
     match /columns/{columnId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
-      allow update, delete: if isOwner(resource.data.ownerId) || isAdmin();
+      allow update, delete: if isOwner(request.resource.data.ownerId) || isAdmin();
     }
 
     /**
