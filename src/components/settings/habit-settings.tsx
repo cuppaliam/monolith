@@ -11,7 +11,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -146,15 +145,6 @@ export default function HabitSettings() {
                 />
             </TableCell>
             <TableCell className="p-2">
-            <Checkbox
-                checked={currentHabit.active}
-                onCheckedChange={(checked) =>
-                changeHandler('active', !!checked)
-                }
-                disabled={isNew && !habit}
-            />
-            </TableCell>
-            <TableCell className="p-2">
             <Select
                 value={currentHabit.period}
                 onValueChange={(value) =>
@@ -232,7 +222,6 @@ export default function HabitSettings() {
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className="w-[250px]">Name</TableHead>
-              <TableHead>Active</TableHead>
               <TableHead>Period</TableHead>
               <TableHead>Frequency</TableHead>
               <TableHead>Goal</TableHead>
