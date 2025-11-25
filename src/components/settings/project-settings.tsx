@@ -191,7 +191,7 @@ export default function ProjectSettings() {
         </TableCell>
         <TableCell className="p-2">
           <Select
-            value={currentProject.status}
+            value={currentProject.status || 'active'}
             onValueChange={(value: 'active' | 'archived' | 'completed') =>
               changeHandler('status', value)
             }

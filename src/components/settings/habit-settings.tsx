@@ -146,7 +146,7 @@ export default function HabitSettings() {
             </TableCell>
             <TableCell className="p-2">
             <Select
-                value={currentHabit.period}
+                value={currentHabit.period || 'week'}
                 onValueChange={(value) =>
                 changeHandler('period', value)
                 }
@@ -164,7 +164,7 @@ export default function HabitSettings() {
             <TableCell className="p-2">
             <Input
                 type="number"
-                value={currentHabit.frequency}
+                value={currentHabit.frequency || 1}
                 onChange={(e) =>
                 changeHandler(
                     'frequency',
@@ -178,7 +178,7 @@ export default function HabitSettings() {
             </TableCell>
             <TableCell className="p-2">
             <Select
-                value={currentHabit.goal}
+                value={currentHabit.goal || 'build'}
                 onValueChange={(value: 'build' | 'stop') =>
                 changeHandler('goal', value)
                 }
