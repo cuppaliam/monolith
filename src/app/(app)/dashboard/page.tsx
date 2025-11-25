@@ -30,17 +30,20 @@ export default function DashboardPage() {
         <StatCard 
           title="Time Logged Today" 
           value={`${totalHoursToday.toFixed(1)}h`}
-          icon={Clock} 
+          icon={Clock}
+          href="/time"
         />
         <StatCard 
           title="Tasks Completed Today" 
           value={tasksCompletedToday.toString()} 
           icon={CheckCircle}
+          href="/tasks"
         />
         <StatCard 
           title="Habits Completed" 
           value={`${habitsCompletedToday} / ${totalActiveHabits}`}
           icon={Repeat} 
+          href="/habits"
         />
       </div>
 
