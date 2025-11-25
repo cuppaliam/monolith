@@ -1,7 +1,7 @@
 import StatCard from '@/components/dashboard/stat-card';
 import TasksOverview from '@/components/dashboard/tasks-overview';
+import TimeOverview from '@/components/dashboard/time-overview';
 import HabitsOverview from '@/components/dashboard/habits-overview';
-import TimeTrackingOverview from '@/components/dashboard/time-tracking-overview';
 import TimePerProjectChart from '@/components/reports/time-per-project-chart';
 import { tasks, timeEntries } from '@/lib/data';
 import { Clock, ListTodo, CheckCircle } from 'lucide-react';
@@ -25,7 +25,7 @@ export default function DashboardPage() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <StatCard 
-          title="Time Tracked Today" 
+          title="Time Logged Today" 
           value={`${totalHoursToday.toFixed(1)}h`}
           icon={Clock} 
         />
@@ -44,7 +44,7 @@ export default function DashboardPage() {
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-8">
           <TasksOverview />
-          <TimeTrackingOverview />
+          <TimeOverview />
         </div>
         <div className="space-y-8">
           <HabitsOverview />

@@ -26,7 +26,7 @@ import { useSidebar } from '@/components/ui/sidebar';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/time-tracking', icon: Clock, label: 'Time Tracking' },
+  { href: '/time', icon: Clock, label: 'Time' },
   { href: '/tasks', icon: ListTodo, label: 'Tasks' },
   { href: '/habits', icon: Repeat, label: 'Habits' },
   { href: '/reports', icon: BarChart3, label: 'Reports' },
