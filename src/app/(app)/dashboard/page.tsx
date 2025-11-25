@@ -1,8 +1,8 @@
 import StatCard from '@/components/dashboard/stat-card';
-import TasksOverview from '@/components/dashboard/tasks-overview';
-import TimeOverview from '@/components/dashboard/time-overview';
+import UpcomingTasks from '@/components/dashboard/upcoming-tasks';
 import HabitsOverview from '@/components/dashboard/habits-overview';
-import TimePerProjectChart from '@/components/reports/time-per-project-chart';
+import WeeklyOverviewChart from '@/components/dashboard/weekly-overview-chart';
+import ProjectGoals from '@/components/dashboard/project-goals';
 import { tasks, timeEntries } from '@/lib/data';
 import { Clock, ListTodo, CheckCircle } from 'lucide-react';
 import { isToday } from 'date-fns';
@@ -43,8 +43,8 @@ export default function DashboardPage() {
 
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-8">
-          <TasksOverview />
-          <TimeOverview />
+          <UpcomingTasks />
+          <ProjectGoals />
         </div>
         <div className="space-y-8">
           <HabitsOverview />
@@ -52,9 +52,9 @@ export default function DashboardPage() {
       </div>
       
        <div>
-          <h2 className="text-2xl font-heading font-bold mb-4">Project Time Distribution</h2>
+          <h2 className="text-2xl font-heading font-bold mb-4">Weekly Overview</h2>
           <div className="h-[400px]">
-            <TimePerProjectChart />
+            <WeeklyOverviewChart />
           </div>
         </div>
     </div>
