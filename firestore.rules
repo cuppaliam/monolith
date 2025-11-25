@@ -88,7 +88,8 @@ service cloud.firestore {
     }
     
     match /time_entries/{timeEntryId} {
-      allow list, get: if isSignedIn() && query.where.get('ownerId')[2] == request.auth.uid;
+      allow list: if isSignedIn() && request.query.resource.data.ownerId == request.auth.uid;
+      allow get: if isOwner(get(/databases/$(database)/documents/time_entries/$(timeEntryId)).data.ownerId) || isAdmin();
       allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
       allow update, delete: if isOwner(get(/databases/$(database)/documents/time_entries/$(timeEntryId)).data.ownerId) || isAdmin();
     }
