@@ -20,22 +20,31 @@ import {
 } from '@/components/ui/select';
 import { PlusCircle } from 'lucide-react';
 import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
-import { collection, doc, query, where } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import type { Project, Task, TaskPriority, TaskStatus } from '@/lib/types';
 import { useState } from 'react';
 import { formatISO } from 'date-fns';
+import { DatePicker } from '../ui/date-picker';
 
 export function TaskActions() {
   const { firestore } = useFirebase();
   const { user } = useUser();
   const [isOpen, setIsOpen] = useState(false);
+  const [dueDate, setDueDate] = useState<Date | undefined>(new Date());
 
   const projectsQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
     return query(collection(firestore, 'projects'), where('ownerId', '==', user.uid));
   }, [firestore, user]);
   const { data: projects } = useCollection<Project>(projectsQuery);
+
+  const columnsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return query(collection(firestore, 'columns'), where('ownerId', '==', user.uid));
+  }, [firestore, user]);
+  const { data: columns } = useCollection(columnsQuery);
+
 
   const handleCreateTask = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -54,7 +63,7 @@ export function TaskActions() {
       projectId,
       status,
       priority,
-      dueDate: formatISO(new Date()),
+      dueDate: dueDate ? formatISO(dueDate) : new Date().toISOString(),
       createdAt: new Date().toISOString(),
       ownerId: user.uid,
     };
@@ -63,6 +72,7 @@ export function TaskActions() {
     addDocumentNonBlocking(tasksCollection, newTask);
     
     setIsOpen(false);
+    setDueDate(new Date()); // Reset due date
   };
 
 
@@ -115,10 +125,9 @@ export function TaskActions() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="backlog">Backlog</SelectItem>
-                  <SelectItem value="todo">To Do</SelectItem>
-                  <SelectItem value="inprogress">In Progress</SelectItem>
-                  <SelectItem value="done">Done</SelectItem>
+                  {(columns ?? []).sort((a,b) => a.order - b.order).map(col => (
+                     <SelectItem key={col.id} value={col.id}>{col.title}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -137,6 +146,12 @@ export function TaskActions() {
                   <SelectItem value="urgent">Urgent</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+             <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="dueDate" className="text-right">
+                Due Date
+              </Label>
+               <DatePicker date={dueDate} setDate={setDueDate} className="col-span-3" />
             </div>
           </div>
           <Button type="submit">Save Task</Button>
