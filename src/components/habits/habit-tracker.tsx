@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -7,10 +8,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { habits, habitLogs as initialHabitLogs } from '@/lib/data';
 import { startOfWeek, addDays, format, isSameDay } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import type { HabitLog } from '@/lib/types';
 
 export default function HabitTracker() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [habitLogs, setHabitLogs] = useState(initialHabitLogs);
+  const [habitLogs, setHabitLogs] = useState<HabitLog[]>(initialHabitLogs);
 
   const weekStartsOn = 1; // Monday
   const weekStart = startOfWeek(currentDate, { weekStartsOn });
@@ -25,7 +27,7 @@ export default function HabitTracker() {
     if (logIndex > -1) {
       setHabitLogs(habitLogs.filter((_, index) => index !== logIndex));
     } else {
-      setHabitLogs([...habitLogs, { habitId, date: dateStr }]);
+      setHabitLogs([...habitLogs, { id: `log-${Date.now()}`, habitId, date: dateStr, completed: true }]);
     }
   };
 

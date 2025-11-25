@@ -1,3 +1,4 @@
+
 export type Project = {
   id: string;
   name: string;
@@ -46,6 +47,8 @@ export type Habit = {
 };
 
 export type HabitLog = {
+  id: string;
   habitId: string;
   date: string; // YYYY-MM-DD
+  completed: boolean;
 };

@@ -1,5 +1,6 @@
+
 import type { Project, Task, TimeEntry, Habit, HabitLog, Column } from './types';
-import { subDays, formatISO, startOfWeek, addDays, format } from 'date-fns';
+import { subDays, formatISO, startOfWeek, addDays, format, eachDayOfInterval } from 'date-fns';
 
 export const projects: Project[] = [
   { id: 'proj-1', name: 'Monolith App', color: 'hsl(var(--chart-1))', status: 'active', hoursPerWeek: 20 },
@@ -41,18 +42,50 @@ export const habits: Habit[] = [
   { id: 'habit-4', name: 'Practice coding', active: true, period: 'week', frequency: 4, goal: 'build', color: 'hsl(var(--chart-4))' },
 ];
 
-const today = new Date();
-const weekStart = startOfWeek(today, { weekStartsOn: 1 });
-export const habitLogs: HabitLog[] = [
-    // Week 1
-    { habitId: 'habit-1', date: format(addDays(weekStart, 0), 'yyyy-MM-dd') },
-    { habitId: 'habit-1', date: format(addDays(weekStart, 2), 'yyyy-MM-dd') },
-    { habitId: 'habit-2', date: format(addDays(weekStart, 0), 'yyyy-MM-dd') },
-    { habitId: 'habit-2', date: format(addDays(weekStart, 1), 'yyyy-MM-dd') },
-    { habitId: 'habit-2', date: format(addDays(weekStart, 2), 'yyyy-MM-dd') },
-    { habitId: 'habit-2', date: format(addDays(weekStart, 3), 'yyyy-MM-dd') },
-    { habitId: 'habit-3', date: format(addDays(weekStart, 0), 'yyyy-MM-dd') },
-    { habitId: 'habit-3', date: format(addDays(weekStart, 1), 'yyyy-MM-dd') },
-    { habitId: 'habit-3', date: format(addDays(weekStart, 2), 'yyyy-MM-dd') },
-    { habitId: 'habit-4', date: format(addDays(weekStart, 1), 'yyyy-MM-dd') },
-];
+// Generate more realistic mock habit logs for the last 90 days
+const generateMockLogs = (): HabitLog[] => {
+  const logs: HabitLog[] = [];
+  const today = new Date();
+  const ninetyDaysAgo = subDays(today, 90);
+  const dateInterval = eachDayOfInterval({ start: ninetyDaysAgo, end: today });
+
+  habits.forEach(habit => {
+    dateInterval.forEach(date => {
+      // Simulate completion based on frequency and some randomness
+      const dayOfWeek = date.getDay(); // Sunday is 0
+      let shouldComplete = false;
+      
+      switch(habit.id) {
+        case 'habit-1': // Morning workout (5 times a week)
+          if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Mon-Fri
+            shouldComplete = Math.random() > 0.3; // 70% chance
+          }
+          break;
+        case 'habit-2': // Read 20 pages (7 times a week)
+          shouldComplete = Math.random() > 0.2; // 80% chance
+          break;
+        case 'habit-3': // Meditate (daily)
+          shouldComplete = Math.random() > 0.4; // 60% chance
+          break;
+        case 'habit-4': // Practice coding (4 times a week)
+           if ([1, 2, 4, 5].includes(dayOfWeek)) { // Mon, Tue, Thu, Fri
+             shouldComplete = Math.random() > 0.25; // 75% chance
+           }
+          break;
+      }
+
+      if (shouldComplete) {
+        logs.push({
+          id: `log-${habit.id}-${format(date, 'yyyy-MM-dd')}`,
+          habitId: habit.id,
+          date: format(date, 'yyyy-MM-dd'),
+          completed: true,
+        });
+      }
+    });
+  });
+
+  return logs;
+};
+
+export const habitLogs: HabitLog[] = generateMockLogs();
