@@ -1,0 +1,186 @@
+/**
+ * Core Philosophy: This ruleset implements a hybrid security model. Data is
+ * segregated into two main categories: user-private data (Habits) and
+ * collaborative data (Projects). User-private data follows a strict ownership
+ * model, where users can only access their own information. The Projects
+ * collection is intended for collaboration, but requires a denormalized
+ * ownership field (e.g., 'ownerId') on each project document to enforce write
+ * permissions. A global 'admin' role exists for administrative override.
+ *
+ * Data Structure:
+ * - /users/{userId}/...: Contains all data private to a specific user, such as
+ *   their habits and logs. Access is strictly controlled by the userId in the path.
+ * - /projects/{projectId}/...: Contains project data, which is publicly readable.
+ *   Write access is intended to be restricted to project owners/members.
+ * - /roles_admin/{userId}: A special collection where the existence of a
+ *   document signifies that the user has global admin privileges.
+ *
+ * Key Security Decisions:
+ * - Default Deny: All paths are closed by default. Access is granted explicitly.
+ * - No User Listing: It is not possible to list all users in the system.
+ * - Admin Override: Users with a document in /roles_admin can read and write
+ *   all data in the database, providing essential administrative capabilities.
+ * - Denormalization for Authorization: Write access to the /projects collection
+ *   and its subcollections is critically dependent on an 'ownerId' field being
+ *   present on the /projects/{projectId} document. Without this field, writes
+ *   are disabled to maintain security.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ----------------------------------------------------------------------
+    // Helper Functions
+    // ----------------------------------------------------------------------
+
+    /**
+     * Is the user authenticated?
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Does the requesting user's UID match the path's userId?
+     * This is the foundation of the user-ownership model.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Does a document already exist? Used for safe updates and deletes.
+     */
+    function isExistingDoc() {
+      return resource != null;
+    }
+
+    /**
+     * Is the requesting user the owner of an existing document?
+     * Combines ownership and existence checks for state-changing operations.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && isExistingDoc();
+    }
+
+    /**
+     * Does the requesting user have a document in the roles_admin collection?
+     * This grants global read/write privileges.
+     */
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+
+    // ----------------------------------------------------------------------
+    // Collection Rules
+    // ----------------------------------------------------------------------
+
+    /**
+     * @description Controls access to Project documents. Projects are publicly readable,
+     * but writes are restricted to owners.
+     * @path /projects/{projectId}
+     * @allow (get) Any user, signed in or not, can read a project document.
+     * @deny (create) A user attempts to create a project, which is disallowed until an ownership model is defined in the schema.
+     * @principle Public Read with Owner-Only Writes.
+     */
+    match /projects/{projectId} {
+      allow get, list: if true;
+
+      // CRITICAL: The 'Project' entity is missing an 'ownerId' or similar authorization field.
+      // Owner-only writes cannot be securely implemented without it.
+      // To enable writes, add an 'ownerId' field to your Project documents, where the value is
+      // the UID of the user who should have write permissions. Then, update the rules below.
+      //
+      // Example for 'create': allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      // Example for 'update'/'delete': allow update, delete: if isOwner(resource.data.ownerId) || isAdmin();
+      allow create: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+    }
+
+    /**
+     * @description Controls access to Task subcollection documents. Access is derived
+     * from the parent Project's ownership.
+     * @path /projects/{projectId}/tasks/{taskId}
+     * @allow (get) Any user can read a task since its parent project is public.
+     * @deny (create) A user attempts to create a task, which is disallowed until the parent project has an ownership model.
+     * @principle Inherited Access via Parent Document.
+     */
+    match /projects/{projectId}/tasks/{taskId} {
+      allow get, list: if true;
+
+      // CRITICAL: Writes to tasks are disabled because the parent 'Project'
+      // entity is missing an 'ownerId' field. To enable writes, add an 'ownerId'
+      // to the parent project document and update these rules to check it using `get()`.
+      //
+      // Example for 'create':
+      // allow create: if isSignedIn() && get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid && hasValidTaskRelationshipsOnCreate(projectId);
+      allow create: if false; // TODO: Add parent owner validation once Project schema is updated.
+      allow update: if false; // TODO: Add parent owner validation once Project schema is updated.
+      allow delete: if false; // TODO: Add parent owner validation once Project schema is updated.
+    }
+
+    /**
+     * @description Controls access to TimeEntry subcollection documents. Access is
+     * derived from the parent Project's ownership.
+     * @path /projects/{projectId}/tasks/{taskId}/time_entries/{timeEntryId}
+     * @allow (get) Any user can read a time entry since its parent project is public.
+     * @deny (create) A user attempts to create a time entry, which is disallowed until the parent project has an ownership model.
+     * @principle Inherited Access via Parent Document.
+     */
+    match /projects/{projectId}/tasks/{taskId}/time_entries/{timeEntryId} {
+      allow get, list: if true;
+
+      // CRITICAL: Writes to time entries are disabled for the same reason as tasks.
+      // The parent 'Project' entity requires an 'ownerId' field to secure writes.
+      // Update these rules after updating the Project schema and rules.
+      allow create: if false; // TODO: Add parent owner validation once Project schema is updated.
+      allow update: if false; // TODO: Add parent owner validation once Project schema is updated.
+      allow delete: if false; // TODO: Add parent owner validation once Project schema is updated.
+    }
+
+    /**
+     * @description Secures a user's private Habit documents.
+     * @path /users/{userId}/habits/{habitId}
+     * @allow (create) An authenticated user `abc` creates a habit in their own path `/users/abc/habits/123`.
+     * @deny (get) A user `xyz` attempts to read a habit from `/users/abc/habits/123`.
+     * @principle Restricts access to a user's own data tree (Ownership).
+     */
+    match /users/{userId}/habits/{habitId} {
+      allow get, list: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId) || isAdmin();
+      allow delete: if isExistingOwner(userId) || isAdmin();
+    }
+
+    /**
+     * @description Secures a user's private HabitLog documents.
+     * @path /users/{userId}/habits/{habitId}/habit_logs/{habitLogId}
+     * @allow (create) User `abc` creates a log for their own habit at `/users/abc/habits/xyz/habit_logs/123`.
+     * @deny (list) User `xyz` attempts to list logs from `/users/abc/habits/xyz/habit_logs`.
+     * @principle Restricts access to a user's own data tree (Ownership).
+     */
+    match /users/{userId}/habits/{habitId}/habit_logs/{habitLogId} {
+      allow get, list: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId) || isAdmin();
+      allow delete: if isExistingOwner(userId) || isAdmin();
+    }
+
+    /**
+     * @description Manages admin role documents. Existence of a document grants
+     * a user admin privileges across the entire database.
+     * @path /roles_admin/{userId}
+     * @allow (get) An admin user `xyz` reads another user's role doc at `/roles_admin/abc`.
+     * @deny (list) Any non-admin user attempts to list all admin documents.
+     * @principle Role-Based Access Control (RBAC) and prevention of user enumeration.
+     */
+    match /roles_admin/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if false;
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+  }
+}

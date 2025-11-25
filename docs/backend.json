@@ -1,0 +1,308 @@
+{
+  "entities": {
+    "Project": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Project",
+      "type": "object",
+      "description": "Represents a project that can be tracked for time and tasks.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Project entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the project."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the project."
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ]
+    },
+    "Task": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Task",
+      "type": "object",
+      "description": "Represents a task associated with a project.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Task entity."
+        },
+        "projectId": {
+          "type": "string",
+          "description": "Reference to Project. (Relationship: Project 1:N Task)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the task."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the task."
+        },
+        "priority": {
+          "type": "string",
+          "description": "The priority of the task (e.g., High, Medium, Low)."
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the task (e.g., To Do, In Progress, Done)."
+        },
+        "dueDate": {
+          "type": "string",
+          "description": "The due date for the task.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "projectId",
+        "name",
+        "status"
+      ]
+    },
+    "TimeEntry": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "TimeEntry",
+      "type": "object",
+      "description": "Represents a time entry for a specific task and project.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the TimeEntry entity."
+        },
+        "projectId": {
+          "type": "string",
+          "description": "Reference to Project. (Relationship: Project 1:N TimeEntry)"
+        },
+        "taskId": {
+          "type": "string",
+          "description": "Reference to Task. (Relationship: Task 1:N TimeEntry)"
+        },
+        "startTime": {
+          "type": "string",
+          "description": "The start time of the time entry.",
+          "format": "date-time"
+        },
+        "endTime": {
+          "type": "string",
+          "description": "The end time of the time entry.",
+          "format": "date-time"
+        },
+        "duration": {
+          "type": "number",
+          "description": "The duration of the time entry in minutes or hours."
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional description of the time entry."
+        }
+      },
+      "required": [
+        "id",
+        "projectId",
+        "taskId",
+        "startTime",
+        "endTime",
+        "duration"
+      ]
+    },
+    "Habit": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Habit",
+      "type": "object",
+      "description": "Represents a habit that the user is tracking.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Habit entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the habit."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the habit."
+        },
+        "frequency": {
+          "type": "string",
+          "description": "The frequency of the habit (e.g., Daily, Weekly, Monthly)."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "frequency"
+      ]
+    },
+    "HabitLog": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "HabitLog",
+      "type": "object",
+      "description": "Represents a log entry for a specific habit on a specific date.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the HabitLog entity."
+        },
+        "habitId": {
+          "type": "string",
+          "description": "Reference to Habit. (Relationship: Habit 1:N HabitLog)"
+        },
+        "date": {
+          "type": "string",
+          "description": "The date of the habit log entry.",
+          "format": "date-time"
+        },
+        "completed": {
+          "type": "boolean",
+          "description": "Indicates whether the habit was completed on the specified date."
+        }
+      },
+      "required": [
+        "id",
+        "habitId",
+        "date",
+        "completed"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "projects/{projectId}",
+        "definition": {
+          "entityName": "Project",
+          "schema": {
+            "$ref": "#/backend/entities/Project"
+          },
+          "description": "Stores project data. Each document represents a single project.",
+          "params": [
+            {
+              "name": "projectId",
+              "description": "The unique identifier of the project."
+            }
+          ]
+        }
+      },
+      {
+        "path": "projects/{projectId}/tasks/{taskId}",
+        "definition": {
+          "entityName": "Task",
+          "schema": {
+            "$ref": "#/backend/entities/Task"
+          },
+          "description": "Stores tasks associated with a specific project. Each document represents a single task. Includes denormalized 'projectId' for efficient querying.",
+          "params": [
+            {
+              "name": "projectId",
+              "description": "The unique identifier of the project."
+            },
+            {
+              "name": "taskId",
+              "description": "The unique identifier of the task."
+            }
+          ]
+        }
+      },
+      {
+        "path": "projects/{projectId}/tasks/{taskId}/time_entries/{timeEntryId}",
+        "definition": {
+          "entityName": "TimeEntry",
+          "schema": {
+            "$ref": "#/backend/entities/TimeEntry"
+          },
+          "description": "Stores time entries for specific tasks within a project. Each document represents a single time entry. Includes denormalized 'projectId' and 'taskId' for efficient querying.",
+          "params": [
+            {
+              "name": "projectId",
+              "description": "The unique identifier of the project."
+            },
+            {
+              "name": "taskId",
+              "description": "The unique identifier of the task."
+            },
+            {
+              "name": "timeEntryId",
+              "description": "The unique identifier of the time entry."
+            }
+          ]
+        }
+      },
+      {
+        "path": "users/{userId}/habits/{habitId}",
+        "definition": {
+          "entityName": "Habit",
+          "schema": {
+            "$ref": "#/backend/entities/Habit"
+          },
+          "description": "Stores habits for a specific user. Each document represents a single habit.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "habitId",
+              "description": "The unique identifier of the habit."
+            }
+          ]
+        }
+      },
+      {
+        "path": "users/{userId}/habits/{habitId}/habit_logs/{habitLogId}",
+        "definition": {
+          "entityName": "HabitLog",
+          "schema": {
+            "$ref": "#/backend/entities/HabitLog"
+          },
+          "description": "Stores habit logs for a specific habit within a user's profile. Each document represents a single habit log entry. Includes denormalized 'habitId' for efficient querying.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "habitId",
+              "description": "The unique identifier of the habit."
+            },
+            {
+              "name": "habitLogId",
+              "description": "The unique identifier of the habit log."
+            }
+          ]
+        }
+      },
+      {
+        "path": "roles_admin/{userId}",
+        "definition": {
+          "entityName": "admin",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Indicates admin role. Existence of document grants admin privileges.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to be secure, scalable, and easily debuggable, following the core design principles and strategy mandates. It avoids hierarchical authorization dependencies by denormalizing authorization data where necessary and uses structural segregation to ensure a homogeneous security posture within each collection. This design implements path-based ownership where applicable, and membership maps for collaborative data. Global roles will be managed by document existence to facilitate secure admin functionality."
+  }
+}
