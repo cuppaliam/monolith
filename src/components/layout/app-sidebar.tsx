@@ -63,6 +63,7 @@ export default function AppSidebar() {
                 <SidebarMenuButton
                   isActive={pathname.startsWith(item.href)}
                   tooltip={item.label}
+                  size="lg"
                 >
                   <item.icon />
                   <span>{item.label}</span>
