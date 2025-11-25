@@ -75,22 +75,22 @@ service cloud.firestore {
     // Collection Rules
     // ----------------------------------------------------------------------
     match /projects/{projectId} {
-      allow list: if isSignedIn();
+      allow list: if isSignedIn() && query.where.get('ownerId')[2] == request.auth.uid;
       allow get: if isOwner(resource.data.ownerId) || isAdmin();
       allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
       allow update, delete: if isOwner(resource.data.ownerId) || isAdmin();
-
-      match /tasks/{taskId} {
-        allow list, get: if isSignedIn() && get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid;
-        allow create: if isSignedIn() && get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid;
-        allow update, delete: if isSignedIn() && get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid;
-      }
-
-      match /time_entries/{timeEntryId} {
-        allow list, get: if isSignedIn() && get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid;
-        allow create: if isSignedIn() && get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid;
-        allow update, delete: if isSignedIn() && get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid;
-      }
+    }
+    
+    match /tasks/{taskId} {
+      allow list, get: if isSignedIn() && query.where.get('ownerId')[2] == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if isOwner(get(/databases/$(database)/documents/tasks/$(taskId)).data.ownerId) || isAdmin();
+    }
+    
+    match /time_entries/{timeEntryId} {
+      allow list, get: if isSignedIn() && query.where.get('ownerId')[2] == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if isOwner(get(/databases/$(database)/documents/time_entries/$(timeEntryId)).data.ownerId) || isAdmin();
     }
 
     /**
