@@ -1,5 +1,4 @@
-# Firebase Studio
+# Monolith
+Simple vibe coded project made in not too much time for personal use.
 
-This is a NextJS starter in Firebase Studio.
-
-To get started, take a look at src/app/page.tsx.
+Helps manage projects, time, tasks and habits in one web app.
