@@ -1,5 +1,8 @@
+
 import KanbanBoard from '@/components/tasks/kanban-board';
 import { TaskActions } from '@/components/tasks/task-actions';
+
+export const dynamic = 'force-dynamic';
 
 export default function TasksPage() {
   return (

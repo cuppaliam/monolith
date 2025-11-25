@@ -1,6 +1,9 @@
+
 'use client';
 
 import TimerComponent from '@/components/time/timer';
+
+export const dynamic = 'force-dynamic';
 
 export default function TimePage() {
   return (

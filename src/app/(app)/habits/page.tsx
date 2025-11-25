@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -16,6 +17,8 @@ import { Card } from '@/components/ui/card';
 import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import type { Habit } from '@/lib/types';
+
+export const dynamic = 'force-dynamic';
 
 export default function HabitsPage() {
   const { firestore } = useFirebase();

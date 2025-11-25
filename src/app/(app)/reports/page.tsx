@@ -1,3 +1,4 @@
+
 'use client';
 import WeeklyOverviewChart from "@/components/dashboard/weekly-overview-chart";
 import HabitCompletionChart from "@/components/reports/habit-completion-chart";
@@ -7,6 +8,8 @@ import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase
 import { collection, query, where } from 'firebase/firestore';
 import { TimeEntry } from '@/lib/types';
 import TimePerProjectChart from "@/components/reports/time-per-project-chart";
+
+export const dynamic = 'force-dynamic';
 
 export default function ReportsPage() {
   const { firestore } = useFirebase();

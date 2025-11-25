@@ -1,49 +1,52 @@
-'use client';
 
 import StatCard from '@/components/dashboard/stat-card';
 import UpcomingTasks from '@/components/dashboard/upcoming-tasks';
 import HabitsOverview from '@/components/dashboard/habits-overview';
 import WeeklyOverviewChart from '@/components/dashboard/weekly-overview-chart';
 import ProjectGoals from '@/components/dashboard/project-goals';
-import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
 import { Clock, ListTodo, CheckCircle, Repeat } from 'lucide-react';
-import { isToday, format, startOfToday } from 'date-fns';
+import { cookies } from 'next/headers';
+import { getFirebaseAdmin } from '@/firebase/server';
+import { CollectionReference, Query, collection, getDocs, query, where } from 'firebase/firestore';
 import { TimeEntry, Task, Habit, HabitLog } from '@/lib/types';
+import { isToday, format } from 'date-fns';
 
-export default function DashboardPage() {
-  const { firestore } = useFirebase();
-  const { user } = useUser();
+export const dynamic = 'force-dynamic';
 
-  const timeEntriesQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return query(
-      collection(firestore, 'time_entries'),
-      where('ownerId', '==', user.uid)
-    );
-  }, [firestore, user]);
-  const { data: timeEntries } = useCollection<TimeEntry>(timeEntriesQuery);
+async function getData(userId: string) {
+  const { firestore } = getFirebaseAdmin();
 
-  const tasksQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return query(
-      collection(firestore, 'tasks'), 
-      where('ownerId', '==', user.uid)
-    );
-  }, [firestore, user]);
-  const { data: tasks } = useCollection<Task>(tasksQuery);
+  const timeEntriesQuery = query(
+    collection(firestore, 'time_entries'),
+    where('ownerId', '==', userId)
+  );
 
-  const habitsQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return collection(firestore, `users/${user.uid}/habits`);
-  }, [firestore, user]);
-  const { data: habits } = useCollection<Habit>(habitsQuery);
+  const tasksQuery = query(
+    collection(firestore, 'tasks'), 
+    where('ownerId', '==', userId)
+  );
 
-  const habitLogsQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return collection(firestore, `users/${user.uid}/habit_logs`);
-  }, [firestore, user]);
-  const { data: habitLogs } = useCollection<HabitLog>(habitLogsQuery);
+  const habitsQuery = collection(firestore, `users/${userId}/habits`);
+  const habitLogsQuery = collection(firestore, `users/${userId}/habit_logs`);
+  
+  const [timeEntriesSnap, tasksSnap, habitsSnap, habitLogsSnap] = await Promise.all([
+    getDocs(timeEntriesQuery as Query<TimeEntry>),
+    getDocs(tasksQuery as Query<Task>),
+    getDocs(habitsQuery as CollectionReference<Habit>),
+    getDocs(habitLogsQuery as CollectionReference<HabitLog>)
+  ]);
+
+  const timeEntries = timeEntriesSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+  const tasks = tasksSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+  const habits = habitsSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+  const habitLogs = habitLogsSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+
+  return { timeEntries, tasks, habits, habitLogs };
+}
+
+
+export default async function DashboardPage() {
+  const { timeEntries, tasks, habits, habitLogs } = await getData("yIE3eLOu6pW2lmFJCRvCT5vtHso1");
 
   const totalHoursToday = (timeEntries ?? [])
     .filter(entry => entry.startTime && isToday(new Date(entry.startTime)))

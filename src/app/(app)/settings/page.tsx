@@ -1,7 +1,10 @@
+
 import HabitSettings from '@/components/settings/habit-settings';
 import TimerSettings from '@/components/settings/timer-settings';
 import ProjectSettings from '@/components/settings/project-settings';
 import { Separator } from '@/components/ui/separator';
+
+export const dynamic = 'force-dynamic';
 
 export default function SettingsPage() {
   return (
