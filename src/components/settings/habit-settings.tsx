@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import {
   Table,
   TableBody,
@@ -21,21 +22,22 @@ import {
 import { Button } from '@/components/ui/button';
 import { habits as initialHabits } from '@/lib/data';
 import type { Habit } from '@/lib/types';
-import { Plus } from 'lucide-react';
 
-const getNewHabitTemplate = (length: number): Habit => ({
+const getNewHabitTemplate = (): Habit => ({
   id: `new-${Date.now()}`,
   name: '',
   active: true,
   period: 'week',
   frequency: 1,
   goal: 'build',
-  color: `hsl(var(--chart-${(length % 5) + 1}))`,
+  color: '', // Color will be assigned on commit
 });
 
 export default function HabitSettings() {
   const [habits, setHabits] = useState<Habit[]>(initialHabits);
-  const [newHabit, setNewHabit] = useState<Habit>(getNewHabitTemplate(habits.length));
+  const [newHabit, setNewHabit] = useState<Habit>(getNewHabitTemplate());
+
+  const assignColor = (index: number) => `hsl(var(--chart-${(index % 5) + 1}))`;
 
   const handleHabitChange = (
     habitId: string,
@@ -49,59 +51,63 @@ export default function HabitSettings() {
     );
   };
   
-  const handleAddNewHabit = (
+  const handleNewHabitChange = (
     field: keyof Habit,
     value: string | number | boolean | 'build' | 'stop'
   ) => {
-      const updatedNewHabit = { ...newHabit, [field]: value };
-      
-      // If the name is being added, we're creating a new habit from the template
-      if (field === 'name' && value && !habits.find(h => h.id === newHabit.id)) {
-        setHabits([...habits, updatedNewHabit]);
-        setNewHabit(getNewHabitTemplate(habits.length + 1));
-      } else { // Otherwise, we're just updating the current new habit in place
-         setHabits(habits.map(h => h.id === newHabit.id ? updatedNewHabit : h));
-      }
-  }
+    setNewHabit((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const commitNewHabit = () => {
+    if (newHabit.name.trim() !== '') {
+      const habitToCommit = { 
+        ...newHabit, 
+        color: assignColor(habits.length) 
+      };
+      setHabits([...habits, habitToCommit]);
+      setNewHabit(getNewHabitTemplate());
+    }
+  };
 
   const renderHabitRow = (habit: Habit, isNew: boolean) => {
     const changeHandler = isNew 
-      ? (field: keyof Habit, value: any) => handleAddNewHabit(field, value)
+      ? (field: keyof Habit, value: any) => handleNewHabitChange(field, value)
       : (field: keyof Habit, value: any) => handleHabitChange(habit.id, field, value);
-
-    const currentHabit = isNew ? newHabit : habit;
-
-    // A bit of a trick for the new row. If we just started typing, the `newHabit` in state
-    // won't be in the `habits` array yet, so we use it directly. If it's already added, we use the `habit` from the array.
-    const habitToRender = (isNew && !habits.find(h => h.id === newHabit.id)) ? newHabit : habit;
 
     return (
         <TableRow key={habit.id} className="hover:bg-transparent">
         <TableCell className="p-2">
           <Input
-            value={habitToRender.name}
+            value={habit.name}
             placeholder={isNew ? 'Add a new habit...' : ''}
-            onChange={(e) =>
-              changeHandler('name', e.target.value)
+            onChange={(e) => changeHandler('name', e.target.value)
             }
+            onBlur={isNew ? commitNewHabit : undefined}
+            onKeyDown={(e) => {
+              if (isNew && e.key === 'Enter') {
+                commitNewHabit();
+                // Optionally, focus the next new input, though this can be complex
+              }
+            }}
             className="w-full bg-transparent border-none focus-visible:ring-1 h-8"
           />
         </TableCell>
         <TableCell className="p-2">
           <Checkbox
-            checked={habitToRender.active}
+            checked={habit.active}
             onCheckedChange={(checked) =>
               changeHandler('active', !!checked)
             }
+            disabled={isNew && !habit.name}
           />
         </TableCell>
         <TableCell className="p-2">
           <Select
-            value={habitToRender.period}
+            value={habit.period}
             onValueChange={(value) =>
               changeHandler('period', value)
             }
-            disabled={isNew && !habitToRender.name}
+            disabled={isNew && !habit.name}
           >
             <SelectTrigger className="bg-transparent border-none focus:ring-1 w-auto h-8">
               <SelectValue />
@@ -115,7 +121,7 @@ export default function HabitSettings() {
         <TableCell className="p-2">
           <Input
             type="number"
-            value={habitToRender.frequency}
+            value={habit.frequency}
             onChange={(e) =>
               changeHandler(
                 'frequency',
@@ -124,16 +130,16 @@ export default function HabitSettings() {
             }
             className="w-20 bg-transparent border-none focus-visible:ring-1 h-8"
             min="1"
-            disabled={isNew && !habitToRender.name}
+            disabled={isNew && !habit.name}
           />
         </TableCell>
         <TableCell className="p-2">
            <Select
-            value={habitToRender.goal}
+            value={habit.goal}
             onValueChange={(value: 'build' | 'stop') =>
               changeHandler('goal', value)
             }
-            disabled={isNew && !habitToRender.name}
+            disabled={isNew && !habit.name}
           >
             <SelectTrigger className="bg-transparent border-none focus:ring-1 w-auto h-8">
               <SelectValue />
@@ -147,13 +153,6 @@ export default function HabitSettings() {
       </TableRow>
     );
   };
-
-  // Combine habits and the template for rendering, but only if the template hasn't been "committed"
-  const allHabitsForRender = [...habits];
-  const newHabitTemplateForRender = getNewHabitTemplate(habits.length);
-  if (!habits.find(h => h.id === newHabit.id && h.name)) {
-      allHabitsForRender.push(newHabitTemplateForRender);
-  }
 
   return (
     <div className="space-y-4">
