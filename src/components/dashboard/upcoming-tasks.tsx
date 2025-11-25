@@ -45,12 +45,6 @@ export default function UpcomingTasks() {
             You have {upcoming.length} task{upcoming.length !== 1 && 's'} due in the next 7 days.
             </CardDescription>
         </div>
-        <Button asChild size="sm" className="ml-auto gap-1">
-            <Link href="/tasks">
-            View All
-            <ArrowRight className="h-4 w-4" />
-            </Link>
-        </Button>
       </CardHeader>
       <CardContent className="grid gap-4">
         {upcoming.length > 0 ? (
