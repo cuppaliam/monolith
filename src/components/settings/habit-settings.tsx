@@ -67,6 +67,7 @@ export default function HabitSettings() {
     if (newHabit && newHabit.name.trim() !== '') {
       const habitToCommit = { 
         ...newHabit, 
+        id: `habit-${Date.now()}`, // Ensure a more unique ID
         color: assignColor(habits.length) 
       };
       setHabits([...habits, habitToCommit]);
@@ -86,7 +87,7 @@ export default function HabitSettings() {
       : (field: keyof Habit, value: any) => handleHabitChange(currentHabit.id, field, value);
 
     const onBlurHandler = (e: React.FocusEvent<HTMLInputElement>) => {
-        if (isNew && newHabit) {
+        if (isNew && newHabit && newHabit.name.trim() !== '') {
             commitNewHabit();
         }
     }
@@ -170,7 +171,7 @@ export default function HabitSettings() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-destructive"
+                  className="h-8 w-8 text-muted-foreground opacity-20 group-hover:opacity-100 hover:text-destructive"
                   onClick={() => handleDeleteHabit(currentHabit.id)}
                 >
                   <Trash2 className="h-4 w-4" />
