@@ -35,10 +35,10 @@ export const timeEntries: TimeEntry[] = [
 ];
 
 export const habits: Habit[] = [
-  { id: 'habit-1', name: 'Morning workout', frequency: 5, color: 'hsl(var(--chart-1))' },
-  { id: 'habit-2', name: 'Read 20 pages', frequency: 7, color: 'hsl(var(--chart-2))' },
-  { id: 'habit-3', name: 'Meditate', frequency: 7, color: 'hsl(var(--chart-3))' },
-  { id: 'habit-4', name: 'Practice coding', frequency: 4, color: 'hsl(var(--chart-4))' },
+  { id: 'habit-1', name: 'Morning workout', active: true, period: 'week', frequency: 5, goal: 'build', color: 'hsl(var(--chart-1))' },
+  { id: 'habit-2', name: 'Read 20 pages', active: true, period: 'week', frequency: 7, goal: 'build', color: 'hsl(var(--chart-2))' },
+  { id: 'habit-3', name: 'Meditate', active: true, period: 'day', frequency: 1, goal: 'build', color: 'hsl(var(--chart-3))' },
+  { id: 'habit-4', name: 'Practice coding', active: true, period: 'week', frequency: 4, goal: 'build', color: 'hsl(var(--chart-4))' },
 ];
 
 const today = new Date();

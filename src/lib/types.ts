@@ -36,7 +36,10 @@ export type TimeEntry = {
 export type Habit = {
   id: string;
   name: string;
-  frequency: number; // times per week
+  active: boolean;
+  period: 'day' | 'week';
+  frequency: number;
+  goal: 'build' | 'stop';
   color: string;
 };
 

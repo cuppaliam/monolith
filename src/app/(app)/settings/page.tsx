@@ -1,3 +1,4 @@
+import HabitSettings from '@/components/settings/habit-settings';
 import TimerSettings from '@/components/settings/timer-settings';
 
 export default function SettingsPage() {
@@ -11,6 +12,7 @@ export default function SettingsPage() {
       </header>
 
       <TimerSettings />
+      <HabitSettings />
     </div>
   );
 }
