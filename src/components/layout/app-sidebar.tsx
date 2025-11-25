@@ -50,9 +50,14 @@ export default function AppSidebar() {
             <SidebarTrigger className="hidden md:flex" />
           </div>
         ) : (
-          <Button variant="ghost" size="icon" className="h-10 w-10" onClick={toggleSidebar}>
+          <SidebarMenuButton
+            size="lg"
+            className="h-10 w-10"
+            onClick={toggleSidebar}
+            tooltip="Toggle Sidebar"
+          >
             <PanelLeft />
-          </Button>
+          </SidebarMenuButton>
         )}
       </SidebarHeader>
       <SidebarContent>
