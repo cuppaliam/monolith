@@ -1,7 +1,8 @@
+
 'use client';
 
 import { Bar, BarChart, Line, ComposedChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from 'recharts';
-import { useCollection, useFirebase, useUser } from '@/firebase';
+import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import type { ChartConfig } from '@/components/ui/chart';
@@ -13,26 +14,26 @@ export default function WeeklyOverviewChart() {
   const { firestore } = useFirebase();
   const { user } = useUser();
 
-  const projectsQuery = useMemo(() => {
-    if (!user) return null;
+  const projectsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
     return query(collection(firestore, 'projects'), where('ownerId', '==', user.uid));
   }, [firestore, user]);
   const { data: projects } = useCollection<Project>(projectsQuery);
 
-  const habitsQuery = useMemo(() => {
-    if (!user) return null;
+  const habitsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
     return collection(firestore, `users/${user.uid}/habits`);
   }, [firestore, user]);
   const { data: habits } = useCollection<Habit>(habitsQuery);
   
-  const habitLogsQuery = useMemo(() => {
-    if (!user) return null;
+  const habitLogsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
     return collection(firestore, `users/${user.uid}/habit_logs`);
   }, [firestore, user]);
   const { data: habitLogs } = useCollection<HabitLog>(habitLogsQuery);
   
-  const timeEntriesQuery = useMemo(() => {
-    if (!user) return null;
+  const timeEntriesQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
     return query(collection(firestore, 'time_entries'), where('ownerId', '==', user.uid));
   }, [firestore, user]);
   const { data: timeEntries } = useCollection<TimeEntry>(timeEntriesQuery);
@@ -60,7 +61,7 @@ export default function WeeklyOverviewChart() {
       const completionRate = totalHabits > 0 ? (completedCount / totalHabits) * 100 : 0;
       
       // Time per project
-      const dailyEntries = (timeEntries ?? []).filter(entry => isSameDay(new Date(entry.startTime), date));
+      const dailyEntries = (timeEntries ?? []).filter(entry => entry.startTime && isSameDay(new Date(entry.startTime), date));
       const timeByProject = (projects ?? []).reduce((acc, project) => {
           const projectTime = dailyEntries
               .filter(entry => entry.projectId === project.id)
