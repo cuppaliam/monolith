@@ -22,6 +22,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { habits as initialHabits } from '@/lib/data';
 import type { Habit } from '@/lib/types';
+import { Trash2 } from 'lucide-react';
 
 const getNewHabitTemplate = (): Habit => ({
   id: `new-${Date.now()}`,
@@ -35,7 +36,7 @@ const getNewHabitTemplate = (): Habit => ({
 
 export default function HabitSettings() {
   const [habits, setHabits] = useState<Habit[]>(initialHabits);
-  const [newHabit, setNewHabit] = useState<Habit>(getNewHabitTemplate());
+  const [newHabit, setNewHabit] = useState<Habit | null>(null);
 
   const assignColor = (index: number) => `hsl(var(--chart-${(index % 5) + 1}))`;
 
@@ -55,102 +56,128 @@ export default function HabitSettings() {
     field: keyof Habit,
     value: string | number | boolean | 'build' | 'stop'
   ) => {
-    setNewHabit((prev) => ({ ...prev, [field]: value }));
+    if (!newHabit) {
+        setNewHabit({ ...getNewHabitTemplate(), [field]: value });
+    } else {
+        setNewHabit((prev) => ({ ...prev!, [field]: value }));
+    }
   };
 
   const commitNewHabit = () => {
-    if (newHabit.name.trim() !== '') {
+    if (newHabit && newHabit.name.trim() !== '') {
       const habitToCommit = { 
         ...newHabit, 
         color: assignColor(habits.length) 
       };
       setHabits([...habits, habitToCommit]);
-      setNewHabit(getNewHabitTemplate());
+      setNewHabit(null);
     }
   };
 
-  const renderHabitRow = (habit: Habit, isNew: boolean) => {
+  const handleDeleteHabit = (habitId: string) => {
+    setHabits((prev) => prev.filter((h) => h.id !== habitId));
+  };
+
+  const renderHabitRow = (habit: Habit | null, isNew: boolean) => {
+    const currentHabit = habit || getNewHabitTemplate();
+    
     const changeHandler = isNew 
       ? (field: keyof Habit, value: any) => handleNewHabitChange(field, value)
-      : (field: keyof Habit, value: any) => handleHabitChange(habit.id, field, value);
+      : (field: keyof Habit, value: any) => handleHabitChange(currentHabit.id, field, value);
+
+    const onBlurHandler = (e: React.FocusEvent<HTMLInputElement>) => {
+        if (isNew && newHabit) {
+            commitNewHabit();
+        }
+    }
 
     return (
-        <TableRow key={habit.id} className="hover:bg-transparent">
-        <TableCell className="p-2">
-          <Input
-            value={habit.name}
-            placeholder={isNew ? 'Add a new habit...' : ''}
-            onChange={(e) => changeHandler('name', e.target.value)
-            }
-            onBlur={isNew ? commitNewHabit : undefined}
-            onKeyDown={(e) => {
-              if (isNew && e.key === 'Enter') {
-                commitNewHabit();
-                // Optionally, focus the next new input, though this can be complex
-              }
-            }}
-            className="w-full bg-transparent border-none focus-visible:ring-1 h-8"
-          />
-        </TableCell>
-        <TableCell className="p-2">
-          <Checkbox
-            checked={habit.active}
-            onCheckedChange={(checked) =>
-              changeHandler('active', !!checked)
-            }
-            disabled={isNew && !habit.name}
-          />
-        </TableCell>
-        <TableCell className="p-2">
-          <Select
-            value={habit.period}
-            onValueChange={(value) =>
-              changeHandler('period', value)
-            }
-            disabled={isNew && !habit.name}
-          >
-            <SelectTrigger className="bg-transparent border-none focus:ring-1 w-auto h-8">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="day">Day</SelectItem>
-              <SelectItem value="week">Week</SelectItem>
-            </SelectContent>
-          </Select>
-        </TableCell>
-        <TableCell className="p-2">
-          <Input
-            type="number"
-            value={habit.frequency}
-            onChange={(e) =>
-              changeHandler(
-                'frequency',
-                parseInt(e.target.value, 10) || 1
-              )
-            }
-            className="w-20 bg-transparent border-none focus-visible:ring-1 h-8"
-            min="1"
-            disabled={isNew && !habit.name}
-          />
-        </TableCell>
-        <TableCell className="p-2">
-           <Select
-            value={habit.goal}
-            onValueChange={(value: 'build' | 'stop') =>
-              changeHandler('goal', value)
-            }
-            disabled={isNew && !habit.name}
-          >
-            <SelectTrigger className="bg-transparent border-none focus:ring-1 w-auto h-8">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="build">Build</SelectItem>
-              <SelectItem value="stop">Stop</SelectItem>
-            </SelectContent>
-          </Select>
-        </TableCell>
-      </TableRow>
+        <TableRow key={currentHabit.id} className="hover:bg-transparent group">
+            <TableCell className="p-2">
+                <Input
+                    value={currentHabit.name}
+                    placeholder={isNew ? 'Add a new habit...' : ''}
+                    onChange={(e) => changeHandler('name', e.target.value)}
+                    onBlur={onBlurHandler}
+                    onKeyDown={(e) => {
+                        if (isNew && e.key === 'Enter') {
+                            commitNewHabit();
+                        }
+                    }}
+                    className="w-full bg-transparent border-none focus-visible:ring-1 h-8"
+                />
+            </TableCell>
+            <TableCell className="p-2">
+            <Checkbox
+                checked={currentHabit.active}
+                onCheckedChange={(checked) =>
+                changeHandler('active', !!checked)
+                }
+                disabled={isNew && !habit}
+            />
+            </TableCell>
+            <TableCell className="p-2">
+            <Select
+                value={currentHabit.period}
+                onValueChange={(value) =>
+                changeHandler('period', value)
+                }
+                disabled={isNew && !habit}
+            >
+                <SelectTrigger className="bg-transparent border-none focus:ring-1 w-auto h-8">
+                <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                <SelectItem value="day">Day</SelectItem>
+                <SelectItem value="week">Week</SelectItem>
+                </SelectContent>
+            </Select>
+            </TableCell>
+            <TableCell className="p-2">
+            <Input
+                type="number"
+                value={currentHabit.frequency}
+                onChange={(e) =>
+                changeHandler(
+                    'frequency',
+                    parseInt(e.target.value, 10) || 1
+                )
+                }
+                className="w-20 bg-transparent border-none focus-visible:ring-1 h-8"
+                min="1"
+                disabled={isNew && !habit}
+            />
+            </TableCell>
+            <TableCell className="p-2">
+            <Select
+                value={currentHabit.goal}
+                onValueChange={(value: 'build' | 'stop') =>
+                changeHandler('goal', value)
+                }
+                disabled={isNew && !habit}
+            >
+                <SelectTrigger className="bg-transparent border-none focus:ring-1 w-auto h-8">
+                <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                <SelectItem value="build">Build</SelectItem>
+                <SelectItem value="stop">Stop</SelectItem>
+                </SelectContent>
+            </Select>
+            </TableCell>
+             <TableCell className="p-2 w-12">
+              {!isNew && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-destructive"
+                  onClick={() => handleDeleteHabit(currentHabit.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </TableCell>
+        </TableRow>
     );
   };
 
@@ -171,6 +198,7 @@ export default function HabitSettings() {
               <TableHead>Period</TableHead>
               <TableHead>Frequency</TableHead>
               <TableHead>Goal</TableHead>
+              <TableHead className="w-12"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
