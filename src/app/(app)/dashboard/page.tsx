@@ -94,7 +94,7 @@ export default function DashboardPage() {
         />
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-3">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
           <UpcomingTasks />
           <ProjectGoals />
@@ -104,7 +104,7 @@ export default function DashboardPage() {
         </div>
       </div>
       
-       <div>
+       <div className="lg:col-span-3">
           <h2 className="text-2xl font-heading font-bold mb-4">Weekly Overview</h2>
           <div className="h-[350px] md:h-[400px]">
             <WeeklyOverviewChart />
