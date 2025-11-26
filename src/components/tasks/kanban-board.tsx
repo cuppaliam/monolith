@@ -174,37 +174,35 @@ export default function KanbanBoard() {
   }
 
   return (
-    <div className="flex gap-4 items-start overflow-x-auto pb-4 -mx-8 px-8">
-      <DndContext
-        sensors={sensors}
-        onDragStart={onDragStart}
-        onDragEnd={onDragEnd}
-        onDragOver={onDragOver}
-      >
-        <div className="flex gap-4">
-          <SortableContext items={columnsId}>
-            {columns.map((col) => (
-              <KanbanColumn
-                key={col.id}
-                column={col}
-                updateColumn={updateColumn}
-                tasks={tasks.filter((task) => task.status === col.id)}
-              />
-            ))}
-          </SortableContext>
-           <Button variant="outline" className="h-full w-80 flex-shrink-0" onClick={createNewColumn}>
-            <Plus className="mr-2" /> Add Column
-          </Button>
-        </div>
-        {typeof document !== 'undefined' && createPortal(
-          <DragOverlay>
-            {activeTask && (
-              <TaskCard task={activeTask} />
-            )}
-          </DragOverlay>,
-          document.body
-        )}
-      </DndContext>
-    </div>
+    <DndContext
+      sensors={sensors}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onDragOver={onDragOver}
+    >
+      <div className="flex gap-4 items-start pb-4">
+        <SortableContext items={columnsId}>
+          {columns.map((col) => (
+            <KanbanColumn
+              key={col.id}
+              column={col}
+              updateColumn={updateColumn}
+              tasks={tasks.filter((task) => task.status === col.id)}
+            />
+          ))}
+        </SortableContext>
+          <Button variant="outline" className="h-12 w-80 flex-shrink-0" onClick={createNewColumn}>
+          <Plus className="mr-2" /> Add Column
+        </Button>
+      </div>
+      {typeof document !== 'undefined' && createPortal(
+        <DragOverlay>
+          {activeTask && (
+            <TaskCard task={activeTask} />
+          )}
+        </DragOverlay>,
+        document.body
+      )}
+    </DndContext>
   );
 }

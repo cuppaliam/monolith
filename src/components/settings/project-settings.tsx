@@ -175,7 +175,7 @@ export default function ProjectSettings() {
             </PopoverContent>
           </Popover>
         </TableCell>
-        <TableCell className="p-2">
+        <TableCell className="p-2 min-w-[200px]">
           <Input
             value={currentProject.name || ''}
             placeholder={isNew ? 'Add a new project...' : ''}
@@ -243,8 +243,8 @@ export default function ProjectSettings() {
           Add, edit, and manage your projects.
         </p>
       </div>
-      <div className="border rounded-lg">
-        <Table>
+      <div className="border rounded-lg overflow-x-auto">
+        <Table className="min-w-[700px]">
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className="w-16 text-center">Color</TableHead>

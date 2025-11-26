@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -37,7 +38,7 @@ const DailyHabitCard = ({
       )}
     >
       <CardHeader>
-        <CardTitle className={cn("text-center", isToday(date) && "text-primary")}>
+        <CardTitle className={cn("text-center text-lg sm:text-xl", isToday(date) && "text-primary")}>
           {format(date, 'eeee, MMM d')}
         </CardTitle>
       </CardHeader>
@@ -66,7 +67,7 @@ const DailyHabitCard = ({
           );
         })}
         {dayHabits.length === 0 && (
-            <p className="text-center text-muted-foreground">No active habits.</p>
+            <p className="text-center text-sm text-muted-foreground">No active habits.</p>
         )}
       </CardContent>
     </Card>
@@ -145,18 +146,18 @@ export default function DailyHabitView() {
   };
 
   return (
-    <div className="relative flex items-center justify-center h-[450px] overflow-hidden">
-        <Button variant="ghost" size="icon" className="absolute left-0 z-20 h-16 w-16" onClick={() => changeDate(-1)}>
-            <ChevronLeft className="h-8 w-8" />
+    <div className="relative flex items-center justify-center min-h-[400px] sm:min-h-[450px] overflow-hidden -mx-4 sm:mx-0">
+        <Button variant="ghost" size="icon" className="absolute left-0 sm:left-4 z-20 h-12 w-12 sm:h-16 sm:w-16" onClick={() => changeDate(-1)}>
+            <ChevronLeft className="h-6 w-6 sm:h-8 sm:w-8" />
         </Button>
-        <Button variant="ghost" size="icon" className="absolute right-0 z-20 h-16 w-16" onClick={() => changeDate(1)}>
-            <ChevronRight className="h-8 w-8" />
+        <Button variant="ghost" size="icon" className="absolute right-0 sm:right-4 z-20 h-12 w-12 sm:h-16 sm:w-16" onClick={() => changeDate(1)}>
+            <ChevronRight className="h-6 w-6 sm:h-8 sm:w-8" />
         </Button>
       
-        <div className="absolute left-0 w-full h-full flex justify-center items-center" onClick={() => changeDate(-1)}>
+        <div className="absolute left-0 w-full h-full flex justify-center items-center hidden md:flex" onClick={() => changeDate(-1)}>
              <DailyHabitCard date={dates.prev} habits={habits ?? []} habitLogs={habitLogs ?? []} onCheckChange={handleCheckChange} isCenter={false} />
         </div>
-        <div className="absolute right-0 w-full h-full flex justify-center items-center" onClick={() => changeDate(1)}>
+        <div className="absolute right-0 w-full h-full flex justify-center items-center hidden md:flex" onClick={() => changeDate(1)}>
              <DailyHabitCard date={dates.next} habits={habits ?? []} habitLogs={habitLogs ?? []} onCheckChange={handleCheckChange} isCenter={false} />
         </div>
 
@@ -169,7 +170,7 @@ export default function DailyHabitView() {
             animate="center"
             exit="exit"
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="w-full max-w-sm absolute"
+            className="w-full max-w-xs sm:max-w-sm absolute"
             >
                 <DailyHabitCard
                     date={dates.current}

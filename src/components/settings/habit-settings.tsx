@@ -130,7 +130,7 @@ export default function HabitSettings() {
 
     return (
         <TableRow key={currentHabit.id || 'new'} className="hover:bg-transparent group">
-            <TableCell className="p-2">
+            <TableCell className="p-2 min-w-[150px]">
                 <Input
                     value={currentHabit.name || ''}
                     placeholder={isNew ? 'Add a new habit...' : ''}
@@ -217,8 +217,8 @@ export default function HabitSettings() {
           Customize the habits you want to track.
         </p>
       </div>
-      <div className="border rounded-lg">
-        <Table>
+      <div className="border rounded-lg overflow-x-auto">
+        <Table className="min-w-[600px]">
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className="w-[250px]">Name</TableHead>

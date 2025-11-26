@@ -33,7 +33,7 @@ export default function ReportsPage() {
             <CardTitle>Weekly Overview</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[400px]">
+            <div className="h-[350px] md:h-[400px]">
               <WeeklyOverviewChart />
             </div>
           </CardContent>
@@ -64,7 +64,7 @@ export default function ReportsPage() {
         </Card>
       </div>
 
-      <div>
+      <div className="overflow-x-auto">
         <TimeLogTable entries={timeEntries ?? []} />
       </div>
     </div>

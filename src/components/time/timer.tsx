@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -192,9 +193,9 @@ export default function TimerComponent() {
   return (
     <div className="w-full max-w-md flex flex-col items-center gap-8">
       <div className="flex items-center gap-2">
-        <span className="text-muted-foreground">Working on</span>
+        <span className="text-muted-foreground text-sm sm:text-base">Working on</span>
         <Select onValueChange={setSelectedProject} disabled={isRunning}>
-          <SelectTrigger className="w-auto h-12 text-base border-none focus:ring-0 bg-transparent shadow-none pr-4">
+          <SelectTrigger className="w-auto h-12 text-sm sm:text-base border-none focus:ring-0 bg-transparent shadow-none pr-4">
             <SelectValue placeholder="project" />
           </SelectTrigger>
           <SelectContent>
@@ -211,27 +212,27 @@ export default function TimerComponent() {
       </div>
 
 
-      <div className="font-mono" style={{ fontSize: 'clamp(4rem, 15vw, 8rem)' }}>
+      <div className="font-mono text-[clamp(2.5rem,15vw,7rem)] leading-none">
         {largeFormatTime(time)}
       </div>
 
-      <div className="flex items-center gap-4">
-        <Button size="icon" variant="ghost" className="w-24 h-24 rounded-full" onClick={cycleMode}>
-            <CurrentModeIcon className="h-8 w-8" />
+      <div className="flex items-center gap-2 sm:gap-4">
+        <Button size="icon" variant="ghost" className="w-16 h-16 sm:w-24 sm:h-24 rounded-full" onClick={cycleMode}>
+            <CurrentModeIcon className="h-6 w-6 sm:h-8 sm:w-8" />
             <span className="sr-only">Change Mode</span>
         </Button>
         <Button
           size="icon"
-          className="w-24 h-24 rounded-full"
+          className="w-20 h-20 sm:w-24 sm:h-24 rounded-full"
           onClick={isRunning ? handleStop : handlePrimaryClick}
           disabled={!selectedProject && mode === 'stopwatch'}
           variant={isRunning ? 'destructive' : 'default'}
         >
-          {isRunning ? <Pause className="h-10 w-10" /> : <Play className="h-10 w-10 ml-2" />}
+          {isRunning ? <Pause className="h-8 w-8 sm:h-10 sm:w-10" /> : <Play className="h-8 w-8 sm:h-10 sm:w-10 ml-1 sm:ml-2" />}
           <span className="sr-only">{isRunning ? 'Pause Timer' : 'Start Timer'}</span>
         </Button>
-         <Button size="icon" variant="ghost" className="w-24 h-24 rounded-full" onClick={handleReset}>
-            <RotateCcw className="h-8 w-8" />
+         <Button size="icon" variant="ghost" className="w-16 h-16 sm:w-24 sm:h-24 rounded-full" onClick={handleReset}>
+            <RotateCcw className="h-6 w-6 sm:h-8 sm:w-8" />
             <span className="sr-only">Reset Timer</span>
         </Button>
       </div>

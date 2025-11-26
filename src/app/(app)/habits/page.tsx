@@ -41,7 +41,7 @@ export default function HabitsPage() {
 
   return (
     <div className="space-y-8">
-      <header className="flex items-center justify-between">
+      <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-heading font-bold">Habits</h1>
           <p className="text-muted-foreground">
@@ -54,11 +54,11 @@ export default function HabitsPage() {
       <DailyHabitView />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <Card className="lg:col-span-2 p-6">
-          <div className="flex justify-between items-center mb-4">
+        <Card className="lg:col-span-2 p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
             <h2 className="text-2xl font-heading font-bold">Monthly Progress</h2>
             <Select value={selectedHabitId} onValueChange={setSelectedHabitId}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Select a habit" />
               </SelectTrigger>
               <SelectContent>

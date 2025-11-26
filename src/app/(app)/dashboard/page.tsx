@@ -73,7 +73,7 @@ export default function DashboardPage() {
         <p className="text-muted-foreground">Welcome back, here's your productivity snapshot.</p>
       </header>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard 
           title="Time Logged Today" 
           value={`${totalHoursToday.toFixed(1)}h`}
@@ -106,7 +106,7 @@ export default function DashboardPage() {
       
        <div>
           <h2 className="text-2xl font-heading font-bold mb-4">Weekly Overview</h2>
-          <div className="h-[400px]">
+          <div className="h-[350px] md:h-[400px]">
             <WeeklyOverviewChart />
           </div>
         </div>

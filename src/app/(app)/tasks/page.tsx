@@ -6,15 +6,17 @@ export const dynamic = 'force-dynamic';
 
 export default function TasksPage() {
   return (
-    <div className="space-y-8">
-      <header className="flex items-center justify-between">
+    <div className="h-full flex flex-col">
+      <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-heading font-bold">Tasks</h1>
           <p className="text-muted-foreground">Organize your work with the Kanban board.</p>
         </div>
         <TaskActions />
       </header>
-      <KanbanBoard />
+      <div className="flex-grow overflow-x-auto">
+        <KanbanBoard />
+      </div>
     </div>
   );
 }

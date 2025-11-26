@@ -93,6 +93,7 @@ export default function LoginPage() {
           fill
           className="object-cover -z-10"
           data-ai-hint={loginBg.imageHint}
+          priority
         />
       )}
       <div className="absolute inset-0 bg-background/80 backdrop-blur-sm -z-10" />
