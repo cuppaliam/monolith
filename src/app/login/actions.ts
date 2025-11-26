@@ -63,7 +63,7 @@ export async function handleLogin(formData: FormData) {
     return { error: mapFirebaseError(e) };
   }
   
-  redirect('/dashboard');
+  // The redirect is now handled on the client
 }
 
 export async function handleSignUp(formData: FormData) {
@@ -82,7 +82,7 @@ export async function handleSignUp(formData: FormData) {
     return { error: mapFirebaseError(error as AuthError) };
   }
 
-  redirect('/dashboard');
+  // The redirect is now handled on the client
 }
 
 
