@@ -4,6 +4,9 @@ import type { NextRequest } from 'next/server';
 import { AUTH_COOKIE_NAME } from '@/lib/constants';
 import { getFirebaseAdmin } from '@/firebase/server';
 
+// Opt out of the edge runtime
+export const runtime = 'nodejs';
+
 async function verifyToken(token: string) {
   if (!token) return null;
   try {

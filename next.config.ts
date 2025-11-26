@@ -1,3 +1,4 @@
+
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
@@ -23,7 +24,7 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
       {
-        protocol: 'https',
+        protocol: 'https://picsum.photos',
         hostname: 'picsum.photos',
         port: '',
         pathname: '/**',
@@ -31,9 +32,7 @@ const nextConfig: NextConfig = {
     ],
   },
   experimental: {
-    serverComponentsExternalPackages: ['firebase-admin'],
-    // Force middleware to run on Node.js runtime
-    allowMiddlewareResponseBody: true, 
+    serverComponentsExternalPackages: ['firebase-admin', 'google-auth-library'],
   },
 };
 
