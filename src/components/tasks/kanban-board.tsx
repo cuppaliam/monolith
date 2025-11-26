@@ -15,8 +15,8 @@ import {
 import { SortableContext, arrayMove } from '@dnd-kit/sortable';
 import { createPortal } from 'react-dom';
 import { Plus } from 'lucide-react';
-import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
-import { collection, doc, query, where } from 'firebase/firestore';
+import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
+import { collection, doc, query } from 'firebase/firestore';
 import { setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import type { Column, Task } from '@/lib/types';
 import KanbanColumn from './kanban-column';
@@ -25,12 +25,11 @@ import TaskCard from './task-card';
 
 export default function KanbanBoard() {
   const { firestore } = useFirebase();
-  const { user } = useUser();
 
   const columnsQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return query(collection(firestore, 'columns'), where('ownerId', '==', user.uid));
-  }, [firestore, user]);
+    if (!firestore) return null;
+    return query(collection(firestore, 'columns'));
+  }, [firestore]);
   const { data: initialColumns } = useCollection<Column>(columnsQuery);
 
   const [columns, setColumns] = useState<Column[]>([]);
@@ -45,9 +44,9 @@ export default function KanbanBoard() {
   }, [initialColumns]);
 
   const tasksQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return query(collection(firestore, 'tasks'), where('ownerId', '==', user.uid));
-  }, [firestore, user]);
+    if (!firestore) return null;
+    return query(collection(firestore, 'tasks'));
+  }, [firestore]);
   const { data: initialTasks } = useCollection<Task>(tasksQuery);
 
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -68,25 +67,24 @@ export default function KanbanBoard() {
   );
   
   function createNewColumn() {
-    if (!user || !firestore) return;
+    if (!firestore) return;
     const newColumn: Omit<Column, 'id'> = {
       title: `Column ${columns.length + 1}`,
       order: columns.length + 1,
-      ownerId: user.uid,
     };
     const columnsCollection = collection(firestore, 'columns');
     addDocumentNonBlocking(columnsCollection, newColumn);
   }
 
   function updateColumn(updatedColumn: Column) {
-    if (!firestore || !user) return;
+    if (!firestore) return;
     const colRef = doc(firestore, 'columns', updatedColumn.id.toString());
     setDocumentNonBlocking(colRef, updatedColumn, { merge: true });
     setColumns(prev => prev.map(c => c.id === updatedColumn.id ? updatedColumn : c));
   }
   
   function updateTask(updatedTask: Task) {
-    if (!firestore || !user) return;
+    if (!firestore) return;
     const taskRef = doc(firestore, 'tasks', updatedTask.id.toString());
     setDocumentNonBlocking(taskRef, updatedTask, { merge: true });
     setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t));

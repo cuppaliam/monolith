@@ -19,8 +19,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
-import { collection, doc, query, where } from 'firebase/firestore';
+import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
+import { collection, doc, query } from 'firebase/firestore';
 import { setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import type { Project } from '@/lib/types';
 import { Trash2 } from 'lucide-react';
@@ -40,21 +40,19 @@ const availableColors = [
   'hsl(280, 80%, 90%)', // Light Purple
 ];
 
-const getNewProjectTemplate = (ownerId: string): Omit<Project, 'id' | 'color'> => ({
+const getNewProjectTemplate = (): Omit<Project, 'id' | 'color'> => ({
   name: '',
   status: 'active',
   hoursPerWeek: 0,
-  ownerId: ownerId,
 });
 
 export default function ProjectSettings() {
   const { firestore } = useFirebase();
-  const { user } = useUser();
 
   const projectsQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return query(collection(firestore, 'projects'), where('ownerId', '==', user.uid));
-  }, [firestore, user]);
+    if (!firestore) return null;
+    return query(collection(firestore, 'projects'));
+  }, [firestore]);
   const { data: initialProjects } = useCollection<Project>(projectsQuery);
 
   const [projects, setProjects] = useState<Project[]>([]);
@@ -84,19 +82,18 @@ export default function ProjectSettings() {
     field: keyof Omit<Project, 'id'>,
     value: string | number | 'active' | 'archived' | 'completed'
   ) => {
-    if (!user) return;
     setNewProject((prev) => ({
-      ...getNewProjectTemplate(user.uid),
+      ...getNewProjectTemplate(),
       ...prev,
       [field]: value
     }));
   };
 
   const commitNewProject = () => {
-    if (newProject && newProject.name && newProject.name.trim() !== '' && user && firestore) {
+    if (newProject && newProject.name && newProject.name.trim() !== '' && firestore) {
       const newId = `project-${Date.now()}`;
       const projectToCommit: Project = { 
-        ...getNewProjectTemplate(user.uid),
+        ...getNewProjectTemplate(),
         ...newProject,
         id: newId,
         color: newProject.color || assignColor(projects.length),
@@ -129,7 +126,7 @@ export default function ProjectSettings() {
   }
 
   const renderProjectRow = (project: Partial<Project> | null, isNew: boolean) => {
-    const currentProject = project || (user ? getNewProjectTemplate(user.uid) : {});
+    const currentProject = project || getNewProjectTemplate();
 
     const changeHandler = isNew
       ? (field: keyof Project, value: any) => handleNewProjectChange(field, value)

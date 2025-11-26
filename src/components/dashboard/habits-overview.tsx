@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useMemo } from 'react';
-import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -13,18 +14,17 @@ import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 export default function HabitsOverview() {
   const { firestore } = useFirebase();
-  const { user } = useUser();
 
   const habitsQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return collection(firestore, `users/${user.uid}/habits`);
-  }, [firestore, user]);
+    if (!firestore) return null;
+    return collection(firestore, `habits`);
+  }, [firestore]);
   const { data: habits } = useCollection<Habit>(habitsQuery);
 
   const habitLogsQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return collection(firestore, `users/${user.uid}/habit_logs`);
-  }, [firestore, user]);
+    if (!firestore) return null;
+    return collection(firestore, `habit_logs`);
+  }, [firestore]);
   const { data: habitLogs } = useCollection<HabitLog>(habitLogsQuery);
 
   const todayStr = format(new Date(), 'yyyy-MM-dd');
@@ -33,9 +33,9 @@ export default function HabitsOverview() {
   const streaks = useMemo(() => calculateStreaks(habits ?? [], habitLogs ?? []), [habits, habitLogs]);
 
   const handleCheckChange = (habitId: string, completed: boolean) => {
-    if (!user || !firestore) return;
+    if (!firestore) return;
     const logId = `log-${habitId}-${todayStr}`;
-    const logRef = doc(firestore, `users/${user.uid}/habit_logs`, logId);
+    const logRef = doc(firestore, `habit_logs`, logId);
 
     if (completed) {
       setDocumentNonBlocking(logRef, {

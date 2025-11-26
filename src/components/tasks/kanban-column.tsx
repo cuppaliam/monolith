@@ -4,8 +4,8 @@
 import { useMemo, useState } from 'react';
 import { SortableContext, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
 import type { Column, Task, Project } from '@/lib/types';
 import TaskCard from './task-card';
 import { ScrollArea } from '../ui/scroll-area';
@@ -19,7 +19,6 @@ interface KanbanColumnProps {
 
 export default function KanbanColumn({ column, updateColumn, tasks }: KanbanColumnProps) {
   const { firestore } = useFirebase();
-  const { user } = useUser();
   const [isEditing, setIsEditing] = useState(false);
   
   const tasksIds = useMemo(() => {
@@ -27,9 +26,9 @@ export default function KanbanColumn({ column, updateColumn, tasks }: KanbanColu
   }, [tasks]);
   
   const projectsQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return query(collection(firestore, 'projects'), where('ownerId', '==', user.uid));
-  }, [firestore, user]);
+    if (!firestore) return null;
+    return query(collection(firestore, 'projects'));
+  }, [firestore]);
   const { data: projects } = useCollection<Project>(projectsQuery);
 
   const getProject = (projectId: string): Project | undefined => (projects ?? []).find(p => p.id === projectId);

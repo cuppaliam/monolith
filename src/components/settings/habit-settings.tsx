@@ -19,29 +19,27 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import type { Habit } from '@/lib/types';
 import { Trash2 } from 'lucide-react';
 
-const getNewHabitTemplate = (ownerId: string): Omit<Habit, 'id' | 'color'> => ({
+const getNewHabitTemplate = (): Omit<Habit, 'id' | 'color'> => ({
   name: '',
   active: true,
   period: 'week',
   frequency: 1,
   goal: 'build',
-  ownerId,
 });
 
 export default function HabitSettings() {
   const { firestore } = useFirebase();
-  const { user } = useUser();
 
   const habitsQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return collection(firestore, `users/${user.uid}/habits`);
-  }, [firestore, user]);
+    if (!firestore) return null;
+    return collection(firestore, `habits`);
+  }, [firestore]);
   const { data: initialHabits } = useCollection<Habit>(habitsQuery);
 
   const [habits, setHabits] = useState<Habit[]>([]);
@@ -71,25 +69,24 @@ export default function HabitSettings() {
     field: keyof Omit<Habit, 'id'>,
     value: string | number | boolean | 'build' | 'stop'
   ) => {
-    if (!user) return;
     setNewHabit((prev) => ({
-      ...getNewHabitTemplate(user.uid),
+      ...getNewHabitTemplate(),
       ...prev,
       [field]: value
     }));
   };
 
   const commitNewHabit = () => {
-    if (newHabit && newHabit.name && newHabit.name.trim() !== '' && user && firestore) {
+    if (newHabit && newHabit.name && newHabit.name.trim() !== '' && firestore) {
       const newId = `habit-${Date.now()}`;
       const habitToCommit: Habit = { 
-        ...getNewHabitTemplate(user.uid),
+        ...getNewHabitTemplate(),
         ...newHabit,
         id: newId,
         color: assignColor(habits.length) 
       } as Habit;
       
-      const docRef = doc(firestore, `users/${user.uid}/habits`, newId);
+      const docRef = doc(firestore, `habits`, newId);
       setDocumentNonBlocking(docRef, habitToCommit, { merge: false });
       
       setHabits(prev => [...prev, habitToCommit]);
@@ -98,25 +95,25 @@ export default function HabitSettings() {
   };
 
   const handleDeleteHabit = (habitId: string) => {
-    if (!user || !firestore) return;
-    const docRef = doc(firestore, `users/${user.uid}/habits`, habitId);
+    if (!firestore) return;
+    const docRef = doc(firestore, `habits`, habitId);
     deleteDocumentNonBlocking(docRef);
     setHabits((prev) => prev.filter((h) => h.id !== habitId));
   };
   
   const handleSaveChanges = () => {
-    if (!user || !firestore) return;
+    if (!firestore) return;
     habits.forEach(habit => {
       // only update if it's an existing habit
       if (initialHabits?.some(h => h.id === habit.id)) {
-        const docRef = doc(firestore, `users/${user.uid}/habits`, habit.id);
+        const docRef = doc(firestore, `habits`, habit.id);
         setDocumentNonBlocking(docRef, habit, { merge: true });
       }
     });
   }
 
   const renderHabitRow = (habit: Partial<Habit> | null, isNew: boolean) => {
-    const currentHabit = habit || (user ? getNewHabitTemplate(user.uid) : {});
+    const currentHabit = habit || getNewHabitTemplate();
     
     const changeHandler = isNew 
       ? (field: keyof Habit, value: any) => handleNewHabitChange(field, value)

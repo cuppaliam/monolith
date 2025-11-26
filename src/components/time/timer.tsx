@@ -12,8 +12,8 @@ import {
 } from '@/components/ui/select';
 import { Play, Pause, RotateCcw, Timer, Gauge, Clock } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
-import { collection, query, where, doc } from 'firebase/firestore';
+import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import type { Project } from '@/lib/types';
 
@@ -47,7 +47,6 @@ const pomodoroDurations = {
 
 export default function TimerComponent() {
   const { firestore } = useFirebase();
-  const { user } = useUser();
   const [mode, setMode] = useState<TimerMode>('stopwatch');
   const [isRunning, setIsRunning] = useState(false);
   const [time, setTime] = useState(0);
@@ -58,9 +57,9 @@ export default function TimerComponent() {
   const [pomodoroCycles, setPomodoroCycles] = useState(0);
 
   const projectsQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return query(collection(firestore, 'projects'), where('ownerId', '==', user.uid));
-  }, [firestore, user]);
+    if (!firestore) return null;
+    return query(collection(firestore, 'projects'));
+  }, [firestore]);
   const { data: projects } = useCollection<Project>(projectsQuery);
 
   const getInitialTime = useCallback(() => {
@@ -83,7 +82,7 @@ export default function TimerComponent() {
   }, [mode, getInitialTime]);
 
   const saveTimeEntry = useCallback(() => {
-    if (!firestore || !user || !selectedProject || !startTime) return;
+    if (!firestore || !selectedProject || !startTime) return;
     if (time <= 0 && mode === 'stopwatch') return;
 
     const endTime = new Date();
@@ -98,10 +97,9 @@ export default function TimerComponent() {
             startTime: startTime.toISOString(),
             endTime: endTime.toISOString(),
             duration: duration,
-            ownerId: user.uid,
         });
     }
-  }, [firestore, user, selectedProject, time, startTime, mode]);
+  }, [firestore, selectedProject, time, startTime, mode]);
   
   useEffect(() => {
     let interval: NodeJS.Timeout | undefined;

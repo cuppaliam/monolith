@@ -1,7 +1,8 @@
+
 'use client';
 
 import { Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
-import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { subDays, format } from 'date-fns';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
@@ -19,18 +20,17 @@ const chartConfig = {
 
 export default function HabitCompletionChart() {
   const { firestore } = useFirebase();
-  const { user } = useUser();
 
   const habitsQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return collection(firestore, `users/${user.uid}/habits`);
-  }, [firestore, user]);
+    if (!firestore) return null;
+    return collection(firestore, `habits`);
+  }, [firestore]);
   const { data: habits } = useCollection<Habit>(habitsQuery);
   
   const habitLogsQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return collection(firestore, `users/${user.uid}/habit_logs`);
-  }, [firestore, user]);
+    if (!firestore) return null;
+    return collection(firestore, `habit_logs`);
+  }, [firestore]);
   const { data: habitLogs } = useCollection<HabitLog>(habitLogsQuery);
 
   const data = useMemo(() => {

@@ -1,27 +1,25 @@
+
 'use client';
-import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { startOfWeek, isWithinInterval } from 'date-fns';
 import { Project, TimeEntry } from '@/lib/types';
-import { useMemo } from 'react';
 
 export default function ProjectGoals() {
   const { firestore } = useFirebase();
-  const { user } = useUser();
 
   const projectsQuery = useMemoFirebase(() => {
-    if (!user) return null;
-    return query(collection(firestore, 'projects'), where('ownerId', '==', user.uid));
-  }, [firestore, user]);
+    if (!firestore) return null;
+    return query(collection(firestore, 'projects'));
+  }, [firestore]);
   const { data: projects } = useCollection<Project>(projectsQuery);
 
   const timeEntriesQuery = useMemoFirebase(() => {
-    if (!user) return null;
-    // This is not ideal, we should query time entries per project, but for simplicity...
-    return query(collection(firestore, 'time_entries'), where('ownerId', '==', user.uid));
-  }, [firestore, user]);
+    if (!firestore) return null;
+    return query(collection(firestore, 'time_entries'));
+  }, [firestore]);
   const { data: timeEntries } = useCollection<TimeEntry>(timeEntriesQuery);
 
   const today = new Date();

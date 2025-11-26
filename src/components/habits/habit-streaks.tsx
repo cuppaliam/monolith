@@ -1,27 +1,27 @@
+
 'use client';
 
 import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Flame } from 'lucide-react';
 import { calculateStreaks } from '@/lib/streaks';
-import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import type { Habit, HabitLog } from '@/lib/types';
 
 export default function HabitStreaks() {
   const { firestore } = useFirebase();
-  const { user } = useUser();
 
   const habitsQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return collection(firestore, `users/${user.uid}/habits`);
-  }, [firestore, user]);
+    if (!firestore) return null;
+    return collection(firestore, `habits`);
+  }, [firestore]);
   const { data: habits } = useCollection<Habit>(habitsQuery);
 
   const habitLogsQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return collection(firestore, `users/${user.uid}/habit_logs`);
-  }, [firestore, user]);
+    if (!firestore) return null;
+    return collection(firestore, `habit_logs`);
+  }, [firestore]);
   const { data: habitLogs } = useCollection<HabitLog>(habitLogsQuery);
 
   const streaks = useMemo(() => calculateStreaks(habits ?? [], habitLogs ?? []), [habits, habitLogs]);

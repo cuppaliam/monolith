@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -9,8 +10,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
 import type { TimeEntry, Project } from '@/lib/types';
 import { format } from 'date-fns';
 import { useMemo } from 'react';
@@ -27,12 +28,11 @@ function formatDuration(seconds: number) {
 
 export default function TimeLogTable({ entries }: TimeLogTableProps) {
   const { firestore } = useFirebase();
-  const { user } = useUser();
   
   const projectsQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return query(collection(firestore, 'projects'), where('ownerId', '==', user.uid));
-  }, [firestore, user]);
+    if (!firestore) return null;
+    return query(collection(firestore, 'projects'));
+  }, [firestore]);
   const { data: projects } = useCollection<Project>(projectsQuery);
 
   const getProject = (projectId: string) => (projects ?? []).find(p => p.id === projectId);

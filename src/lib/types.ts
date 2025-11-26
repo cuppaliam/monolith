@@ -6,7 +6,6 @@ export type Project = {
   color: string;
   status: 'active' | 'archived' | 'completed';
   hoursPerWeek: number;
-  ownerId: string;
 };
 
 export type TaskStatus = 'todo' | 'inprogress' | 'done' | 'backlog';
@@ -19,7 +18,6 @@ export type Column = {
   id: Id;
   title: string;
   order: number;
-  ownerId: string;
 };
 
 export type Task = {
@@ -30,7 +28,6 @@ export type Task = {
   dueDate: string;
   projectId: string;
   createdAt?: string;
-  ownerId: string;
 };
 
 export type TimeEntry = {
@@ -39,7 +36,6 @@ export type TimeEntry = {
   startTime: string;
   endTime: string;
   duration: number; // in seconds
-  ownerId: string;
 };
 
 export type Habit = {
@@ -50,7 +46,6 @@ export type Habit = {
   frequency: number;
   goal: 'build' | 'stop';
   color: string;
-  ownerId: string;
 };
 
 export type HabitLog = {

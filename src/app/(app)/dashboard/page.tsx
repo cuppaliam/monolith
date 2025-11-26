@@ -7,8 +7,8 @@ import HabitsOverview from '@/components/dashboard/habits-overview';
 import WeeklyOverviewChart from '@/components/dashboard/weekly-overview-chart';
 import ProjectGoals from '@/components/dashboard/project-goals';
 import { Clock, CheckCircle, Repeat } from 'lucide-react';
-import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
 import { TimeEntry, Task, Habit, HabitLog } from '@/lib/types';
 import { isToday, format } from 'date-fns';
 import { useMemo } from 'react';
@@ -16,36 +16,29 @@ import { useMemo } from 'react';
 
 export default function DashboardPage() {
   const { firestore } = useFirebase();
-  const { user } = useUser();
 
   const timeEntriesQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return query(
-      collection(firestore, 'time_entries'),
-      where('ownerId', '==', user.uid)
-    );
-  }, [firestore, user]);
+    if (!firestore) return null;
+    return query(collection(firestore, 'time_entries'));
+  }, [firestore]);
   const { data: timeEntries } = useCollection<TimeEntry>(timeEntriesQuery);
 
   const tasksQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return query(
-      collection(firestore, 'tasks'),
-      where('ownerId', '==', user.uid)
-    );
-  }, [firestore, user]);
+    if (!firestore) return null;
+    return query(collection(firestore, 'tasks'));
+  }, [firestore]);
   const { data: tasks } = useCollection<Task>(tasksQuery);
 
   const habitsQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return collection(firestore, `users/${user.uid}/habits`);
-  }, [firestore, user]);
+    if (!firestore) return null;
+    return collection(firestore, `habits`);
+  }, [firestore]);
   const { data: habits } = useCollection<Habit>(habitsQuery);
   
   const habitLogsQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return collection(firestore, `users/${user.uid}/habit_logs`);
-  }, [firestore, user]);
+    if (!firestore) return null;
+    return collection(firestore, `habit_logs`);
+  }, [firestore]);
   const { data: habitLogs } = useCollection<HabitLog>(habitLogsQuery);
 
   const { totalHoursToday, tasksCompletedToday, habitsCompletedToday, totalActiveHabits } = useMemo(() => {

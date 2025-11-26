@@ -9,7 +9,7 @@ import { format, addDays, subDays, isToday } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import type { Habit, HabitLog } from '@/lib/types';
@@ -79,18 +79,17 @@ export default function DailyHabitView() {
   const [direction, setDirection] = useState(0);
 
   const { firestore } = useFirebase();
-  const { user } = useUser();
 
   const habitsQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return collection(firestore, `users/${user.uid}/habits`);
-  }, [firestore, user]);
+    if (!firestore) return null;
+    return collection(firestore, `habits`);
+  }, [firestore]);
   const { data: habits } = useCollection<Habit>(habitsQuery);
   
   const habitLogsQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return collection(firestore, `users/${user.uid}/habit_logs`);
-  }, [firestore, user]);
+    if (!firestore) return null;
+    return collection(firestore, `habit_logs`);
+  }, [firestore]);
   const { data: habitLogs } = useCollection<HabitLog>(habitLogsQuery);
 
   const dates = useMemo(() => {
@@ -107,11 +106,11 @@ export default function DailyHabitView() {
   };
   
   const handleCheckChange = (habitId: string, date: Date, completed: boolean) => {
-    if (!user || !firestore) return;
+    if (!firestore) return;
     
     const dateStr = format(date, 'yyyy-MM-dd');
     const logId = `log-${habitId}-${dateStr}`;
-    const logRef = doc(firestore, `users/${user.uid}/habit_logs`, logId);
+    const logRef = doc(firestore, `habit_logs`, logId);
 
     if (completed) {
       setDocumentNonBlocking(logRef, {

@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -19,8 +20,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { PlusCircle } from 'lucide-react';
-import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import type { Project, Task, TaskPriority, TaskStatus } from '@/lib/types';
 import { useState } from 'react';
@@ -29,26 +30,25 @@ import { DatePicker } from '../ui/date-picker';
 
 export function TaskActions() {
   const { firestore } = useFirebase();
-  const { user } = useUser();
   const [isOpen, setIsOpen] = useState(false);
   const [dueDate, setDueDate] = useState<Date | undefined>(new Date());
 
   const projectsQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return query(collection(firestore, 'projects'), where('ownerId', '==', user.uid));
-  }, [firestore, user]);
+    if (!firestore) return null;
+    return query(collection(firestore, 'projects'));
+  }, [firestore]);
   const { data: projects } = useCollection<Project>(projectsQuery);
 
   const columnsQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return query(collection(firestore, 'columns'), where('ownerId', '==', user.uid));
-  }, [firestore, user]);
+    if (!firestore) return null;
+    return query(collection(firestore, 'columns'));
+  }, [firestore]);
   const { data: columns } = useCollection(columnsQuery);
 
 
   const handleCreateTask = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!user || !firestore) return;
+    if (!firestore) return;
 
     const formData = new FormData(event.currentTarget);
     const title = formData.get('title') as string;
@@ -65,7 +65,6 @@ export function TaskActions() {
       priority,
       dueDate: dueDate ? formatISO(dueDate) : new Date().toISOString(),
       createdAt: new Date().toISOString(),
-      ownerId: user.uid,
     };
     
     const tasksCollection = collection(firestore, 'tasks');

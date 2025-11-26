@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useMemo } from 'react';
-import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import {
   startOfMonth,
@@ -20,7 +21,6 @@ interface HabitCalendarProps {
 
 export default function HabitCalendar({ habitId }: HabitCalendarProps) {
   const { firestore } = useFirebase();
-  const { user } = useUser();
   const today = new Date();
   const firstDayOfMonth = startOfMonth(today);
   const lastDayOfMonth = endOfMonth(today);
@@ -33,9 +33,9 @@ export default function HabitCalendar({ habitId }: HabitCalendarProps) {
   const startingDayIndex = getDay(firstDayOfMonth);
 
   const habitLogsQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return collection(firestore, `users/${user.uid}/habit_logs`);
-  }, [firestore, user]);
+    if (!firestore) return null;
+    return collection(firestore, `habit_logs`);
+  }, [firestore]);
   const { data: habitLogs } = useCollection<HabitLog>(habitLogsQuery);
 
   const habitLogsForHabit = useMemo(() => {

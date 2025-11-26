@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useMemo } from 'react';
-import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { isAfter, startOfToday, addDays, parseISO } from 'date-fns';
@@ -10,20 +11,17 @@ import type { Task, Project, TaskPriority } from '@/lib/types';
 
 export default function UpcomingTasks() {
   const { firestore } = useFirebase();
-  const { user } = useUser();
 
   const tasksQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    // Ideally we'd query based on dueDate, but that requires indexes.
-    // Filtering client-side for this demo.
-    return query(collection(firestore, 'tasks'), where('ownerId', '==', user.uid));
-  }, [firestore, user]);
+    if (!firestore) return null;
+    return query(collection(firestore, 'tasks'));
+  }, [firestore]);
   const { data: tasks } = useCollection<Task>(tasksQuery);
   
   const projectsQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return query(collection(firestore, 'projects'), where('ownerId', '==', user.uid));
-  }, [firestore, user]);
+    if (!firestore) return null;
+    return query(collection(firestore, 'projects'));
+  }, [firestore]);
   const { data: projects } = useCollection<Project>(projectsQuery);
 
 
