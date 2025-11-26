@@ -24,16 +24,14 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
       {
-        protocol: 'https://picsum.photos',
+        protocol: 'https',
         hostname: 'picsum.photos',
         port: '',
         pathname: '/**',
       },
     ],
   },
-  experimental: {
-    serverComponentsExternalPackages: ['firebase-admin', 'google-auth-library'],
-  },
+  serverComponentsExternalPackages: ['firebase-admin', 'google-auth-library'],
 };
 
 export default nextConfig;
