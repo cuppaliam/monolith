@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   getCaretOffset,
   setCaretPosition,
@@ -51,17 +51,15 @@ const ObsidianEditor = () => {
       }
 
       if (block instanceof HTMLElement && block !== activeBlockRef.current) {
-        // Remove active class from previous block
+        // Remove active class from previous block and re-parse to hide tokens
         if (activeBlockRef.current) {
           activeBlockRef.current.classList.remove('active-line');
-          // Re-parse the old line to hide tokens
           const oldText = activeBlockRef.current.textContent || '';
           activeBlockRef.current.innerHTML = parseLine(oldText);
         }
 
-        // Add active class to new block
+        // Add active class to new block and re-parse to show tokens
         block.classList.add('active-line');
-        // Re-parse the new active line to show tokens
         const newText = block.textContent || '';
         block.innerHTML = parseLine(newText);
         

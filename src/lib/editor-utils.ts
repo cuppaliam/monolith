@@ -15,43 +15,43 @@ export const getCaretOffset = (element: HTMLElement): number => {
 
 // Restore cursor position based on text offset
 export const setCaretPosition = (element: HTMLElement, offset: number) => {
-  const selection = window.getSelection();
-  const range = document.createRange();
-  let currentOffset = 0;
-  let found = false;
+    const selection = window.getSelection();
+    const range = document.createRange();
+    let charCount = 0;
+    let found = false;
 
-  const traverse = (node: Node) => {
-    if (found) return;
+    const traverseNodes = (node: Node) => {
+        if (found) return;
 
-    if (node.nodeType === Node.TEXT_NODE) {
-      const nodeLength = node.nodeValue?.length || 0;
-      if (currentOffset + nodeLength >= offset) {
-        range.setStart(node, offset - currentOffset);
-        range.collapse(true);
-        found = true;
-      } else {
-        currentOffset += nodeLength;
-      }
-    } else {
-      for (let i = 0; i < node.childNodes.length; i++) {
-        traverse(node.childNodes[i]);
-      }
+        if (node.nodeType === Node.TEXT_NODE) {
+            const textLength = node.nodeValue?.length ?? 0;
+            if (charCount + textLength >= offset) {
+                range.setStart(node, offset - charCount);
+                range.collapse(true);
+                found = true;
+            } else {
+                charCount += textLength;
+            }
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+            for (let i = 0; i < node.childNodes.length; i++) {
+                traverseNodes(node.childNodes[i]);
+            }
+        }
+    };
+
+    traverseNodes(element);
+
+    if (selection) {
+        selection.removeAllRanges();
+        if (found) {
+            selection.addRange(range);
+        } else {
+            // Fallback: place cursor at the end if offset is out of bounds
+            range.selectNodeContents(element);
+            range.collapse(false);
+            selection.addRange(range);
+        }
     }
-  };
-
-  traverse(element);
-
-  if (selection) {
-    selection.removeAllRanges();
-    if (found) {
-        selection.addRange(range);
-    } else {
-        // Fallback: place cursor at the end of the element if offset is out of bounds
-        range.selectNodeContents(element);
-        range.collapse(false);
-        selection.addRange(range);
-    }
-  }
 };
 
 
@@ -104,7 +104,7 @@ export const parseLine = (text: string): string => {
     '<span class="md-token text-primary">**</span><span class="font-bold text-primary">$2</span><span class="md-token text-primary">**</span>'
   );
 
-  // Italic (*italic*)
+  // Italic (*italic*) - Use a non-greedy match that doesn't include other asterisks
   html = html.replace(
     /(\*)([^*]+?)\1/g,
     '<span class="md-token text-accent">*</span><span class="italic">$2</span><span class="md-token text-accent">*</span>'
