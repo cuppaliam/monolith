@@ -25,7 +25,6 @@ export default function AppNavbar() {
         <Logo className="h-7 w-7" />
         <h1 className="text-lg font-heading font-semibold">Monolith</h1>
       </div>
-      <UserNav />
     </header>
   );
 }
