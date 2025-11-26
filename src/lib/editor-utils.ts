@@ -27,7 +27,7 @@ export const setCaretPosition = (element: HTMLElement, offset: number) => {
       const nodeLength = node.nodeValue?.length || 0;
       if (currentOffset + nodeLength >= offset) {
         range.setStart(node, offset - currentOffset);
-        range.setEnd(node, offset - currentOffset);
+        range.collapse(true);
         found = true;
       } else {
         currentOffset += nodeLength;
@@ -41,9 +41,16 @@ export const setCaretPosition = (element: HTMLElement, offset: number) => {
 
   traverse(element);
 
-  if (found && selection) {
+  if (selection) {
     selection.removeAllRanges();
-    selection.addRange(range);
+    if (found) {
+        selection.addRange(range);
+    } else {
+        // Fallback: place cursor at the end of the element if offset is out of bounds
+        range.selectNodeContents(element);
+        range.collapse(false);
+        selection.addRange(range);
+    }
   }
 };
 
@@ -53,7 +60,7 @@ export const setCaretPosition = (element: HTMLElement, offset: number) => {
  * Wraps tokens in 'md-token' class for conditional hiding.
  */
 export const parseLine = (text: string): string => {
-  // Escape HTML
+  // Escape HTML to prevent XSS and rendering glitches
   let html = text
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -83,7 +90,7 @@ export const parseLine = (text: string): string => {
     )}</span>`;
   }
 
-  // 4. Inline Formatting
+  // 4. Inline Formatting (order matters)
 
   // Code (`code`)
   html = html.replace(
@@ -93,14 +100,14 @@ export const parseLine = (text: string): string => {
 
   // Bold (**bold**)
   html = html.replace(
-    /(\*\*)(.*?)\1/g,
-    '<span class="md-token text-primary">**</span><span class="font-bold text-primary-foreground bg-primary/80 rounded-sm px-1">$2</span><span class="md-token text-primary">**</span>'
+    /(\*\*)([^*]+?)\1/g,
+    '<span class="md-token text-primary">**</span><span class="font-bold">$2</span><span class="md-token text-primary">**</span>'
   );
 
   // Italic (*italic*)
   html = html.replace(
-    /(\*)(.*?)\1/g,
-    '<span class="md-token text-accent">*</span><span class="italic text-accent-foreground bg-accent/20 rounded-sm px-1">$2</span><span class="md-token text-accent">*</span>'
+    /(\*)([^*]+?)\1/g,
+    '<span class="md-token text-accent">*</span><span class="italic">$2</span><span class="md-token text-accent">*</span>'
   );
 
   // WikiLinks ([[Link]])
