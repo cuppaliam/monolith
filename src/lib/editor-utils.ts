@@ -118,4 +118,3 @@ export const parseLine = (text: string): string => {
 
   return html;
 };
-
