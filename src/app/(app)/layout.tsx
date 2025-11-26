@@ -2,6 +2,7 @@
 'use client';
 
 import AppSidebar from '@/components/layout/app-sidebar';
+import AppNavbar from '@/components/layout/app-navbar';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -9,7 +10,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <div className="min-h-screen">{children}</div>
+        <AppNavbar />
+        <main className="flex-1">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   );

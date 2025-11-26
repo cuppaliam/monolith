@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -6,6 +7,7 @@ import {
   Sidebar,
   SidebarHeader,
   SidebarContent,
+  SidebarFooter,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
@@ -22,6 +24,7 @@ import {
   PanelLeft,
 } from 'lucide-react';
 import Logo from './logo';
+import UserNav from './user-nav';
 import { useSidebar } from '@/components/ui/sidebar';
 
 const navItems = [
@@ -30,7 +33,6 @@ const navItems = [
   { href: '/tasks', icon: ListTodo, label: 'Tasks' },
   { href: '/habits', icon: Repeat, label: 'Habits' },
   { href: '/reports', icon: BarChart3, label: 'Reports' },
-  { href: '/settings', icon: Settings, label: 'Settings' },
 ];
 
 export default function AppSidebar() {
@@ -78,6 +80,25 @@ export default function AppSidebar() {
           ))}
         </SidebarMenu>
       </SidebarContent>
+       <SidebarFooter className="hidden md:flex flex-col gap-4 p-2">
+         <SidebarMenu>
+            <SidebarMenuItem>
+                <Link href="/settings" passHref>
+                    <SidebarMenuButton
+                      isActive={pathname.startsWith('/settings')}
+                      tooltip="Settings"
+                      size="lg"
+                    >
+                      <Settings />
+                      <span>Settings</span>
+                    </SidebarMenuButton>
+                </Link>
+            </SidebarMenuItem>
+        </SidebarMenu>
+        <div className="group-data-[state=expanded]:p-2">
+            <UserNav />
+        </div>
+      </SidebarFooter>
     </Sidebar>
   );
 }
