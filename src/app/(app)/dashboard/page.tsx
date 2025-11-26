@@ -1,63 +1,70 @@
 
+'use client';
+
 import StatCard from '@/components/dashboard/stat-card';
 import UpcomingTasks from '@/components/dashboard/upcoming-tasks';
 import HabitsOverview from '@/components/dashboard/habits-overview';
 import WeeklyOverviewChart from '@/components/dashboard/weekly-overview-chart';
 import ProjectGoals from '@/components/dashboard/project-goals';
-import { Clock, ListTodo, CheckCircle, Repeat } from 'lucide-react';
-import { cookies } from 'next/headers';
-import { getFirebaseAdmin } from '@/firebase/server';
-import { CollectionReference, Query, collection, getDocs, query, where } from 'firebase/firestore';
+import { Clock, CheckCircle, Repeat } from 'lucide-react';
+import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
 import { TimeEntry, Task, Habit, HabitLog } from '@/lib/types';
 import { isToday, format } from 'date-fns';
+import { useMemo } from 'react';
 
-export const dynamic = 'force-dynamic';
 
-async function getData(userId: string) {
-  const { firestore } = getFirebaseAdmin();
+export default function DashboardPage() {
+  const { firestore } = useFirebase();
+  const { user } = useUser();
 
-  const timeEntriesQuery = query(
-    collection(firestore, 'time_entries'),
-    where('ownerId', '==', userId)
-  );
+  const timeEntriesQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return query(
+      collection(firestore, 'time_entries'),
+      where('ownerId', '==', user.uid)
+    );
+  }, [firestore, user]);
+  const { data: timeEntries } = useCollection<TimeEntry>(timeEntriesQuery);
 
-  const tasksQuery = query(
-    collection(firestore, 'tasks'), 
-    where('ownerId', '==', userId)
-  );
+  const tasksQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return query(
+      collection(firestore, 'tasks'),
+      where('ownerId', '==', user.uid)
+    );
+  }, [firestore, user]);
+  const { data: tasks } = useCollection<Task>(tasksQuery);
 
-  const habitsQuery = collection(firestore, `users/${userId}/habits`);
-  const habitLogsQuery = collection(firestore, `users/${userId}/habit_logs`);
+  const habitsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return collection(firestore, `users/${user.uid}/habits`);
+  }, [firestore, user]);
+  const { data: habits } = useCollection<Habit>(habitsQuery);
   
-  const [timeEntriesSnap, tasksSnap, habitsSnap, habitLogsSnap] = await Promise.all([
-    getDocs(timeEntriesQuery as Query<TimeEntry>),
-    getDocs(tasksQuery as Query<Task>),
-    getDocs(habitsQuery as CollectionReference<Habit>),
-    getDocs(habitLogsQuery as CollectionReference<HabitLog>)
-  ]);
+  const habitLogsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return collection(firestore, `users/${user.uid}/habit_logs`);
+  }, [firestore, user]);
+  const { data: habitLogs } = useCollection<HabitLog>(habitLogsQuery);
 
-  const timeEntries = timeEntriesSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-  const tasks = tasksSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-  const habits = habitsSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-  const habitLogs = habitLogsSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+  const { totalHoursToday, tasksCompletedToday, habitsCompletedToday, totalActiveHabits } = useMemo(() => {
+    const totalHoursToday = (timeEntries ?? [])
+      .filter(entry => entry.startTime && isToday(new Date(entry.startTime)))
+      .reduce((acc, entry) => acc + entry.duration, 0) / 3600;
 
-  return { timeEntries, tasks, habits, habitLogs };
-}
+    const tasksCompletedToday = (tasks ?? []).filter(task => 
+      task.status === 'done' && task.createdAt && isToday(new Date(task.createdAt))
+    ).length;
+    
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    const todaysLogs = (habitLogs ?? []).filter(log => log.date === todayStr);
+    const habitsCompletedToday = todaysLogs.length;
+    const totalActiveHabits = (habits ?? []).filter(h => h.active).length;
 
+    return { totalHoursToday, tasksCompletedToday, habitsCompletedToday, totalActiveHabits };
+  }, [timeEntries, tasks, habits, habitLogs]);
 
-export default async function DashboardPage() {
-  const { timeEntries, tasks, habits, habitLogs } = await getData("yIE3eLOu6pW2lmFJCRvCT5vtHso1");
-
-  const totalHoursToday = (timeEntries ?? [])
-    .filter(entry => entry.startTime && isToday(new Date(entry.startTime)))
-    .reduce((acc, entry) => acc + entry.duration, 0) / 3600;
-
-  const tasksCompletedToday = (tasks ?? []).filter(task => task.status === 'done' && task.createdAt && isToday(new Date(task.createdAt))).length;
-  
-  const todayStr = format(new Date(), 'yyyy-MM-dd');
-  const todaysLogs = (habitLogs ?? []).filter(log => log.date === todayStr);
-  const habitsCompletedToday = todaysLogs.length;
-  const totalActiveHabits = (habits ?? []).filter(h => h.active).length;
 
   return (
     <div className="space-y-8">

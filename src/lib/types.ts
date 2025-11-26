@@ -1,4 +1,5 @@
 
+
 export type Project = {
   id: string;
   name: string;
@@ -28,7 +29,7 @@ export type Task = {
   priority: TaskPriority;
   dueDate: string;
   projectId: string;
-  createdAt?: string; // made optional
+  createdAt?: string;
   ownerId: string;
 };
 
