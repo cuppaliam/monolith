@@ -73,7 +73,7 @@ export default function DashboardPage() {
         <p className="text-muted-foreground">Welcome back, here's your productivity snapshot.</p>
       </header>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-3">
         <StatCard 
           title="Time Logged Today" 
           value={`${totalHoursToday.toFixed(1)}h`}
@@ -94,7 +94,7 @@ export default function DashboardPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
           <UpcomingTasks />
           <ProjectGoals />
