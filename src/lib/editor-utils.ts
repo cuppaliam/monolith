@@ -100,7 +100,7 @@ export const parseLine = (text: string): string => {
 
   // Bold (**bold**)
   html = html.replace(
-    /(\*\*)([^*]+?)\1/g,
+    /(\*\*)(.*?)\1/g,
     '<span class="md-token text-primary">**</span><span class="font-bold text-primary">$2</span><span class="md-token text-primary">**</span>'
   );
 
