@@ -102,14 +102,13 @@ export default function DashboardPage() {
         <div className="space-y-8">
           <HabitsOverview />
         </div>
-      </div>
-      
-       <div className="lg:col-span-3">
+         <div className="lg:col-span-3">
           <h2 className="text-2xl font-heading font-bold mb-4">Weekly Overview</h2>
           <div className="h-[350px] md:h-[400px]">
             <WeeklyOverviewChart />
           </div>
         </div>
+      </div>
     </div>
   );
 }
