@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 export default function TimePage() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-10rem)] w-full">
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)] w-full p-4">
       <TimerComponent />
     </div>
   );

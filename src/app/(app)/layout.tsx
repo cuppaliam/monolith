@@ -9,7 +9,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <div className="min-h-screen p-4 sm:p-6 lg:p-8">{children}</div>
+        <div className="min-h-screen">{children}</div>
       </SidebarInset>
     </SidebarProvider>
   );
