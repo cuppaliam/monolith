@@ -30,6 +30,12 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Adding this experimental flag to force middleware to run on node
+  experimental: {
+    serverComponentsExternalPackages: ['firebase-admin'],
+    // google-logging-utils is a dependency of firebase-admin that uses `process`
+    unstable_allowDynamic: ['/node_modules/google-logging-utils/**'],
+  },
 };
 
 export default nextConfig;
