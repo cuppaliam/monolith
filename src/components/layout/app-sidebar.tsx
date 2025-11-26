@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -22,6 +21,7 @@ import {
   BarChart3,
   Settings,
   PanelLeft,
+  Notebook,
 } from 'lucide-react';
 import Logo from './logo';
 import UserNav from './user-nav';
@@ -32,6 +32,7 @@ const navItems = [
   { href: '/time', icon: Clock, label: 'Time' },
   { href: '/tasks', icon: ListTodo, label: 'Tasks' },
   { href: '/habits', icon: Repeat, label: 'Habits' },
+  { href: '/notes', icon: Notebook, label: 'Notes' },
   { href: '/reports', icon: BarChart3, label: 'Reports' },
 ];
 
